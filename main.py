@@ -3,19 +3,24 @@ from sanic.views import HTTPMethodView
 from sanic.response import text, json
 from sanic_jinja2 import SanicJinja2
 
+from models import User
+
 app = Sanic(__name__)
 jinja = SanicJinja2(app)
 
 # Serves files from the static folder to the URL /static
 app.static('/static', './static')
 
+
 @app.route("/")
 async def test(request):
     return jinja.render('users.html', request, greetings='Hello!')
 
+
 @app.route("/courses")
 async def test(request):
     return jinja.render('users.html', request, greetings='Hello!')
+
 
 class UserView(HTTPMethodView):
 

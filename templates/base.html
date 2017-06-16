@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!--Import Google Icon Font-->
+    <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="/static/bower_components/materialize/dist/css/materialize.min.css"  media="screen,projection"/>
+    <link type="text/css" rel="stylesheet" href="/static/css/main.css"/>
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  </head>
+
+  <body>
+    <nav class="blue-grey darken-4" role="navigation">
+      <div class="nav-wrapper container"><a id="logo-container" href="/" class="brand-logo">Test for you</a>
+        <ul class="right hide-on-med-and-down">
+          <li><a href="/">Users</a></li>
+          <li><a href="/courses">Courses</a></li>
+        </ul>
+
+        <ul id="nav-mobile" class="side-nav">
+          <li><a href="/">Users</a></li>
+          <li><a href="/courses">Courses</a></li>
+        </ul>
+        <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
+      </div>
+    </nav>
+
+    <div class="container my-5">
+      {% block body %}{% endblock %}
+    </div>
+
+    <footer class="page-footer orange no-padding">
+      <div class="footer-copyright">
+        <div class="container">
+          Made by <a class="orange-text text-lighten-3" href="mailto:mriynuk@email.com">Mike</a>
+        </div>
+      </div>
+    </footer>
+
+    <!--Import jQuery before materialize.js-->
+    <script type="text/javascript" src="/static/bower_components/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="/static/bower_components/materialize/dist/js/materialize.min.js"></script>
+    <script type="text/javascript" src="/static/js/main.js"></script>
+  </body>
+</html>

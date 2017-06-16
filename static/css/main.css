@@ -1,0 +1,33 @@
+.no-padding {
+  padding: 0!important;
+}
+
+.no-margin {
+  margin: 0!important;
+}
+
+.d-inline-block {
+  display: inline-block!important;
+}
+
+.text-uppercase {
+  text-transform: uppercase!important;
+}
+
+.h4 {
+  font-size: 2.28rem;
+}
+
+.my-5 {
+  margin-bottom: 3rem!important;
+  margin-top: 3rem!important;
+}
+
+
+.no-margin .select-wrapper .select-dropdown {
+  margin: 0;
+}
+
+.user-seatch input[type=search] ~ .material-icons {
+	top: 10px;
+}

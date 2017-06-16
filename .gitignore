@@ -1,0 +1,9 @@
+.idea/
+node_modules/
+
+*.pyc
+*.sqlite3
+*.rdb
+*.pid
+*.log
+

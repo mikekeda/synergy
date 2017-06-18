@@ -3,9 +3,20 @@
 {% block title %}Users{% endblock %}
 
 {% block body %}
+  <!-- Modal Structure -->
+  <div id="delete-modal" class="modal">
+    <div class="modal-content">
+      <h4>Delete this user?</h4>
+      <p>The user will be deleted immediately. You can't undo this action.</p>
+    </div>
+    <div class="modal-footer">
+      <a href="#" class="modal-action action-delete modal-close waves-effect waves-green btn-flat">Delete</a>
+    </div>
+  </div>
+
   <div class="row">
     <div class="col s4">
-      <a class="btn-floating waves-effect waves-light red" href="/users/new"><i class="material-icons">add</i></a>
+      <a class="btn-floating waves-effect waves-light red" href="/user/"><i class="material-icons">add</i></a>
       <div class="user-seatch input-field d-inline-block no-margin">
         <input id="search" class="no-margin" type="search" required>
         <label class="label-icon" for="search"><i class="material-icons">search</i></label>
@@ -16,8 +27,8 @@
     <div class="col s2">
       <div class="input-field no-margin">
         <select>
-          <option value="" disabled selected>Users per page</option>
-          <option value="1">10</option>
+          <option value="" disabled>Users per page</option>
+          <option value="1" selected>10</option>
           <option value="2">15</option>
           <option value="3">20</option>
         </select>
@@ -28,32 +39,25 @@
   <table>
     <thead class="grey darken-2">
       <tr>
-        <th class="white-text">Name</th>
-        <th class="white-text">E-mail</th>
-        <th class="white-text">Status</th>
-        <th class="white-text">Actions</th>
+        <th class="no-br-radius white-text">Name</th>
+        <th class="no-br-radius white-text">E-mail</th>
+        <th class="no-br-radius white-text">Status</th>
+        <th class="no-br-radius white-text">Actions</th>
       </tr>
     </thead>
 
     <tbody>
-      <tr>
-        <td>Alvin</td>
-        <td>Eclair</td>
-        <td>$0.87</td>
-        <td>$0.87</td>
+      {% for user in users %}
+      <tr id="user-{{ user.id }}">
+        <td>{{ user.name }}</td>
+        <td>{{ user.email }}</td>
+        <td class="{% if user.status == '1' %}green-text{% else %}red-text{% endif %}">{{ user.status_label }}</td>
+        <td>
+          <a class="btn-floating waves-effect waves-light green" href="/user/{{ user.id }}"><i class="material-icons">edit</i></a>
+          <a class="user-delete-dialog btn-floating waves-effect waves-light red" data-uid="{{ user.id }}" href="/user/{{ user.id }}/delete"><i class="material-icons">delete</i></a>
+        </td>
       </tr>
-      <tr>
-        <td>Alan</td>
-        <td>Jellybean</td>
-        <td>$3.76</td>
-        <td>$3.76</td>
-      </tr>
-      <tr>
-        <td>Jonathan</td>
-        <td>Lollipop</td>
-        <td>$7.00</td>
-        <td>$7.00</td>
-      </tr>
+      {% endfor %}
     </tbody>
   </table>
 {% endblock %}

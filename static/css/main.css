@@ -6,6 +6,10 @@
   margin: 0!important;
 }
 
+.no-br-radius {
+  border-radius: 0!important;
+}
+
 .d-inline-block {
   display: inline-block!important;
 }
@@ -21,6 +25,11 @@
 .my-5 {
   margin-bottom: 3rem!important;
   margin-top: 3rem!important;
+}
+
+.my-6 {
+  margin-bottom: 3.6rem!important;
+  margin-top: 3.6rem!important;
 }
 
 

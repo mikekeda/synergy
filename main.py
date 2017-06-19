@@ -65,30 +65,14 @@ class UserView(HTTPMethodView):
 
     def post(self, request, uid=None):
         """Submit for User edit/create form"""
-        if uid:
-            user = User.get(id=uid)
-            form = UserEditForm(request, obj=user)
-        else:
-            form = UserForm(request)
+        form = UserEditForm(request) if uid else UserForm(request)
 
         if form.validate():
-            # todo: Continue work from this point
-            form.save()
             if uid:
                 user = User.get(id=uid)
-                user.email = form.email.data
-                user.phone = form.phone.data
-                user.mobile = form.mobile.data
-                user.status = form.status.data
+                form.save(obj=user)
             else:
-                user = User(
-                    name=form.name.data,
-                    email=form.email.data,
-                    phone=form.phone.data,
-                    mobile=form.mobile.data,
-                    status=form.status.data,
-                )
-            user.save()
+                form.save()
         else:
             return jinja.render(
                 'user-form.html',

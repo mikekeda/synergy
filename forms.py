@@ -62,7 +62,7 @@ class UserEditForm(UserForm):
         # list of courses
         courses = [('', '-- select courses --')]
         courses.extend(
-            [(course.id, course.name) for course in Course.select()]
+            [(str(course.id), course.name) for course in Course.select()]
         )
         self.courses.choices = courses
 
@@ -70,11 +70,11 @@ class UserEditForm(UserForm):
         user = kwargs.get('obj')
         if user:
             # todo: need to set user's courses
-            usercourses = UserCourse.select().where(
+            usercourses = list(UserCourse.select().where(
                 UserCourse.user == user.id
-            )
+            ))
             # todo: improve CS
-            self.courses.data = [(usercourse.course, usercourse.course) for usercourse in usercourses]
+            self.courses.data = tuple([usercourse.course.id for usercourse in usercourses])
 
     def save(self, *args, **kwargs):
         user = kwargs.get('obj')

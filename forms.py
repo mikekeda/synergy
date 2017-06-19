@@ -5,15 +5,6 @@ from wtforms.validators import Optional, DataRequired, Email, Regexp
 
 from models import User, Course, UserCourse, STATUSES
 
-# todo: Remove this
-COURSES = (
-    ('P012345', 'Python-Base'),
-    ('P234567', 'Python-Database'),
-    ('H345678', 'HTML'),
-    ('J456789', 'Java-Base'),
-    ('JS543210', 'JavaScript-Base'),
-)
-
 
 class UserForm(SanicForm):
     """User create form"""
@@ -69,12 +60,12 @@ class UserEditForm(UserForm):
         # user's courses
         user = kwargs.get('obj')
         if user:
-            # todo: need to set user's courses
-            usercourses = list(UserCourse.select().where(
+            user_courses = UserCourse.select().where(
                 UserCourse.user == user.id
-            ))
-            # todo: improve CS
-            self.courses.data = tuple([usercourse.course.id for usercourse in usercourses])
+            )
+            self.courses.data = []
+            for user_course in user_courses:
+                self.courses.data.append(str(user_course.course.id))
 
     def save(self, *args, **kwargs):
         user = kwargs.get('obj')
@@ -85,8 +76,9 @@ class UserEditForm(UserForm):
             user.status = self.status.data
             user.save()
 
-            user_courses = UserCourse.select().where(
+            UserCourse.delete().where(
                 UserCourse.user == user.id
-            )
-            # todo: improve this
-            UserCourse(user=user.id, course=1).save()
+            ).execute()
+            for course_id in self.courses.data:
+                # todo: improve this
+                UserCourse(user=user.id, course=course_id).save()

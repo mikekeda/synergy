@@ -1,5 +1,8 @@
 $(document).ready(function() {
-  $('select').material_select();
+  var $selects = $('select');
+
+  $selects.find('option[value=""]').attr('disabled', true);
+  $selects.material_select();
   $('.modal').modal();
 
   $('.user-delete-dialog').click(function(e) {

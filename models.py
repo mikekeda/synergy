@@ -23,25 +23,31 @@ class BaseModel(Model):
     class Meta:
         database = db
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    @classmethod
+    def my_get(cls, id):
+        con = MySQLConnection(**db_config)
+        cur = con.cursor()
+        obj = None
         try:
-            self._db_connection = MySQLConnection(**db_config)
-            self._db_cur = self._db_connection.cursor()
-            print(self._db_cur)
+            query = "SELECT * FROM `{}` WHERE `id` = '{}' LIMIT 1".format(
+                cls.__name__.lower(),
+                id
+            )
+            # todo: check why cur.execute(query, (...)) doesn't work
+            cur.execute(query)
+            row = cur.fetchone()
+            # todo: improve this
+            obj_dir = ('id', 'name', 'email', 'phone', 'mobile', 'status')
+            props = dict(zip(obj_dir, row))
+            obj = cls(**props)
+
+            print(obj)
+            print(cls.__dict__.keys())
         except Error as e:
             print(e)
-
-    def __del__(self):
-        self._db_cur = self._db_connection.close()
-        self._db_connection.close()
-
-    def my_get_tables(self):
-        print('in')
-        try:
-            print(self._db_cur.execute("SHOW TABLES").commit())
-        except Error:
-            self._db_connection.rollback()
+            con.rollback()
+        con.close()
+        return obj
 
 
 class User(BaseModel):
@@ -54,7 +60,9 @@ class User(BaseModel):
 
     @hybrid_property
     def status_label(self):
-        return dict(STATUSES)[self.status]
+        if hasattr(self, 'status'):
+            return dict(STATUSES)[self.status]
+        return ''
 
 
 class Course(BaseModel):

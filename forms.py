@@ -60,12 +60,10 @@ class UserEditForm(UserForm):
         # user's courses
         user = kwargs.get('obj')
         if user:
-            user_courses = UserCourse.select().where(
-                UserCourse.user == user.id
-            )
+            user_courses = UserCourse.select(user_id=user.id)
             self.courses.data = []
             for user_course in user_courses:
-                self.courses.data.append(str(user_course.course.id))
+                self.courses.data.append(str(user_course.course_id))
 
     def save(self, *args, **kwargs):
         user = kwargs.get('obj')
@@ -76,9 +74,7 @@ class UserEditForm(UserForm):
             user.status = self.status.data
             user.save()
 
-            UserCourse.delete().where(
-                UserCourse.user == user.id
-            ).execute()
+            UserCourse.delete(user_id=user.id)
             for course_id in self.courses.data:
                 # todo: improve this
-                UserCourse(user=user.id, course=course_id).save()
+                UserCourse(user_id=user.id, course_id=course_id).save()

@@ -35,7 +35,7 @@ app.static('/static', './static')
 @app.route("/")
 async def users_page(request):
     """Users list"""
-    users = list(User.select())
+    users = User.select()
     return jinja.render('users.html', request, users=users)
 
 
@@ -51,7 +51,7 @@ class UserView(HTTPMethodView):
     def get(self, request, uid=None):
         """User edit/create form"""
         if uid:
-            user = User.my_get(id=uid)
+            user = User.get(id=uid)
             form = UserEditForm(request, obj=user)
         else:
             form = UserForm(request)
@@ -69,7 +69,7 @@ class UserView(HTTPMethodView):
 
         if form.validate():
             if uid:
-                user = User.my_get(id=uid)
+                user = User.get(id=uid)
                 form.save(obj=user)
             else:
                 form.save()
@@ -85,7 +85,7 @@ class UserView(HTTPMethodView):
 
     def delete(self, request, uid):
         """User deletion"""
-        User.get(id=uid).my_delete_instance()
+        User.get(id=uid).delete_instance()
 
         return json({'message': 'User was deleted'})
 

@@ -24,22 +24,28 @@ class BaseModel(Model):
         database = db
 
     @classmethod
-    def my_get(cls, id):
+    def my_get(cls, **kwargs):
         con = MySQLConnection(**db_config)
         cur = con.cursor()
         obj = None
         try:
-            query = "SELECT * FROM `{}` WHERE `id` = '{}' LIMIT 1".format(
+            conditions = []
+            for key in kwargs:
+                assert (key in dir(cls)), "{} not valid property".format(key)
+                conditions.append("`{}` = '{}'".format(key, kwargs[key]))
+            conditions = ' AND '.join(conditions)
+
+            query = "SELECT * FROM `{}` WHERE {} LIMIT 1".format(
                 cls.__name__.lower(),
-                id
+                conditions
             )
-            # todo: check why cur.execute(query, (...)) doesn't work
             cur.execute(query)
             row = cur.fetchone()
-            # todo: improve this
-            obj_dir = ('id', 'name', 'email', 'phone', 'mobile', 'status')
-            props = dict(zip(obj_dir, row))
-            obj = cls(**props)
+            if row:
+                # todo: improve this
+                obj_dir = ('id', 'name', 'email', 'phone', 'mobile', 'status')
+                props = dict(zip(obj_dir, row))
+                obj = cls(**props)
 
             print(obj)
             print(cls.__dict__.keys())
@@ -47,7 +53,23 @@ class BaseModel(Model):
             print(e)
             con.rollback()
         con.close()
+
         return obj
+
+    def my_delete_instance(self):
+        con = MySQLConnection(**db_config)
+        cur = con.cursor()
+        result = False
+        try:
+            # todo: need to remove row from usercourse table
+            query = "DELETE FROM `{}` WHERE id=%s".format(self.__class__.__name__.lower())
+            result = cur.execute(query, (self.id,))
+        except Error as e:
+            print(e)
+            con.rollback()
+        con.close()
+
+        return result
 
 
 class User(BaseModel):

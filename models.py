@@ -23,12 +23,16 @@ class BaseModel(ABC):
 
     def __init__(self, **kwargs):
         for key in kwargs:
-            assert (key in dir(type(self))), "{} not valid property".format(key)
+            assert (key in dir(type(self))), "{} not a property".format(key)
             setattr(self, key, kwargs[key])
 
     @staticmethod
     def props():
         return ['id']
+
+    @staticmethod
+    def _foreign_classes():
+        return []
 
     @classmethod
     def get(cls, **kwargs):
@@ -39,14 +43,14 @@ class BaseModel(ABC):
             conditions = []
             for key in kwargs:
                 assert (key in dir(cls)), "{} not valid property".format(key)
-                conditions.append("`{}` = '{}'".format(key, kwargs[key]))
+                conditions.append("{}=%s".format(key))
             conditions = ' AND '.join(conditions)
 
             query = "SELECT * FROM `{}` WHERE {} LIMIT 1".format(
                 cls.__name__.lower(),
                 conditions
             )
-            cur.execute(query)
+            cur.execute(query, list(kwargs.values()))
             row = cur.fetchone()
             if row:
                 props = dict(zip(cls.props(), row))
@@ -95,8 +99,17 @@ class BaseModel(ABC):
         cur = con.cursor()
         result = False
         try:
-            # todo: need to remove row from usercourse table
-            query = "DELETE FROM `{}` WHERE id=%s".format(self.__class__.__name__.lower())
+            # todo: continue
+            for class_name in self._foreign_classes():
+                cl = globals()[class_name]
+                condition = {
+                    '{}_id'.format(type(self).__name__.lower()): self.id
+                }
+                cl.delete(**condition)
+
+            query = "DELETE FROM `{}` WHERE id=%s".format(
+                self.__class__.__name__.lower()
+            )
             result = cur.execute(query, (self.id,))
         except Error as e:
             print(e)
@@ -140,23 +153,27 @@ class BaseModel(ABC):
         cur = con.cursor()
         result = False
         try:
-            values = []
-            dict_values = []
+            insert_values = []
+            update_values = []
+            dict_update_values = {}
             for key in self.props():
-                val = str(getattr(self, key))
-                values.append(repr(val))
+                val = getattr(self, key)
+                insert_values.append(val)
                 if key not in super(type(self), self).props():
-                    dict_values.append("`{}`={}".format(key, repr(val)))
+                    dict_update_values[key] = val
+                    update_values.append(val)
 
             query = "INSERT INTO `{}` ({}) VALUES({}) ON DUPLICATE KEY UPDATE {}".format(
                 self.__class__.__name__.lower(),
-                ', '.join(self.props()),
-                ', '.join(values),
-                ', '.join(dict_values),
+                ','.join(self.props()),
+                ','.join(['%s' for _ in insert_values]),
+                ','.join(["{}=%s".format(key) for key in dict_update_values]),
             )
-            result = cur.execute(query)
+            result = cur.execute(query, insert_values + update_values)
+            con.commit()
         except Error as e:
             print(e)
+            print(cur._executed)
             con.rollback()
         con.close()
 
@@ -186,6 +203,10 @@ class User(BaseModel):
 
         return props
 
+    @staticmethod
+    def _foreign_classes():
+        return ['UserCourse']
+
 
 class Course(BaseModel):
     """Course model"""
@@ -198,6 +219,10 @@ class Course(BaseModel):
         props.extend(['code', 'name'])
 
         return props
+
+    @staticmethod
+    def _foreign_classes():
+        return ['UserCourse']
 
 
 class UserCourse(BaseModel):

@@ -1,5 +1,3 @@
-from playhouse.hybrid import hybrid_property
-
 from mysql.connector import MySQLConnection, Error
 
 # todo: don't commit this
@@ -7,7 +5,7 @@ db_config = {
     'user': 'test_admin',
     'password': 'test_admin_pass',
     'host': '127.0.0.1',
-    'database': 'test_task'
+    'database': 'Users'
 }
 
 STATUSES = (
@@ -67,23 +65,16 @@ class BaseModel():
         cur = con.cursor()
         objs = []
         try:
-            conditions = []
-            for key in kwargs:
-                assert (key in dir(cls)), "{} not valid property".format(key)
-                conditions.append("{}=%s".format(key))
-            conditions = ' AND '.join(conditions)
-
-            if conditions:
-                query = "SELECT * FROM `{}` WHERE {}".format(
-                    cls.__name__.lower(),
-                    conditions
-                )
-            else:
-                query = "SELECT * FROM `{}`".format(
-                    cls.__name__.lower(),
-                )
-            cur.execute(query, list(kwargs.values()))
-            rows = cur.fetchall()
+            # todo: add search by username and paginate
+            # todo: add filter UserCourse by user_id
+            limit = kwargs['limit'] if 'limit' in kwargs else 15
+            offset = kwargs['offset'] if 'offset' in kwargs else 0
+            cur.callproc(
+                'select_objects',
+                args=(cls.__name__.lower(), limit, offset)
+            )
+            objects = next(cur.stored_results())
+            rows = objects.fetchall()
             for row in rows:
                 props = dict(zip(cls.props(), row))
                 objs.append(cls(**props))
@@ -163,7 +154,9 @@ class BaseModel():
                     dict_update_values[key] = val
                     update_values.append(val)
 
-            query = "INSERT INTO `{}` ({}) VALUES({}) ON DUPLICATE KEY UPDATE {}".format(
+            query = """
+            INSERT INTO `{}` ({}) VALUES({}) ON DUPLICATE KEY UPDATE {}
+            """.format(
                 self.__class__.__name__.lower(),
                 ','.join(self.props()),
                 ','.join(['%s' for _ in insert_values]),
@@ -188,8 +181,7 @@ class User(BaseModel):
     mobile = ''
     status = 0
 
-    # todo: use @property
-    @hybrid_property
+    @property
     def status_label(self):
         if hasattr(self, 'status'):
             return dict(STATUSES)[self.status]

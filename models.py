@@ -1,7 +1,6 @@
 from playhouse.hybrid import hybrid_property
 
 from mysql.connector import MySQLConnection, Error
-from abc import ABC
 
 # todo: don't commit this
 db_config = {
@@ -17,7 +16,7 @@ STATUSES = (
 )
 
 
-class BaseModel(ABC):
+class BaseModel():
     """BaseModel model"""
     id = 0
 
@@ -71,7 +70,7 @@ class BaseModel(ABC):
             conditions = []
             for key in kwargs:
                 assert (key in dir(cls)), "{} not valid property".format(key)
-                conditions.append("`{}`='{}'".format(key, kwargs[key]))
+                conditions.append("{}=%s".format(key))
             conditions = ' AND '.join(conditions)
 
             if conditions:
@@ -83,7 +82,7 @@ class BaseModel(ABC):
                 query = "SELECT * FROM `{}`".format(
                     cls.__name__.lower(),
                 )
-            cur.execute(query)
+            cur.execute(query, list(kwargs.values()))
             rows = cur.fetchall()
             for row in rows:
                 props = dict(zip(cls.props(), row))
@@ -99,7 +98,6 @@ class BaseModel(ABC):
         cur = con.cursor()
         result = False
         try:
-            # todo: continue
             for class_name in self._foreign_classes():
                 cl = globals()[class_name]
                 condition = {
@@ -111,6 +109,7 @@ class BaseModel(ABC):
                 self.__class__.__name__.lower()
             )
             result = cur.execute(query, (self.id,))
+            con.commit()
         except Error as e:
             print(e)
             con.rollback()
@@ -127,7 +126,7 @@ class BaseModel(ABC):
             conditions = []
             for key in kwargs:
                 assert (key in dir(cls)), "{} not valid property".format(key)
-                conditions.append("`{}`='{}'".format(key, kwargs[key]))
+                conditions.append("{}=%s".format(key))
             conditions = ' AND '.join(conditions)
 
             if conditions:
@@ -139,7 +138,8 @@ class BaseModel(ABC):
                 query = "DELETE FROM `{}`".format(
                     cls.__name__.lower(),
                 )
-            result = cur.execute(query)
+            result = cur.execute(query, list(kwargs.values()))
+            con.commit()
         except Error as e:
             print(e)
             print(query)

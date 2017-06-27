@@ -17,6 +17,24 @@ BEGIN
   DEALLOCATE PREPARE stmt;
 END;;
 
+CREATE PROCEDURE `select_usercourses`(IN table_name VARCHAR(64), IN offset_num INT, IN limit_num INT, IN user_id INT)
+BEGIN
+  SET @query = CONCAT('select * from ',table_name);
+  IF user_id IS NOT NULL THEN
+    SET @query = CONCAT(@query, ' WHERE user_id = ', user_id);
+  END IF;
+  IF limit_num IS NOT NULL THEN
+    SET @query = CONCAT(@query, ' LIMIT ', limit_num);
+  END IF;
+  IF offset_num IS NOT NULL THEN
+    SET @query = CONCAT(@query, ' OFFSET ', offset_num);
+  END IF;
+
+  PREPARE stmt FROM @query;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+END$$
+
 DELIMITER ;
 
 DROP TABLE IF EXISTS `course`;

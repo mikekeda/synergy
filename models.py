@@ -228,3 +228,27 @@ class UserCourse(BaseModel):
         props.extend(['user_id', 'course_id'])
 
         return props
+
+    @classmethod
+    def select(cls, **kwargs):
+        con = MySQLConnection(**db_config)
+        cur = con.cursor()
+        objs = []
+        try:
+            limit = kwargs['limit'] if 'limit' in kwargs else 15
+            offset = kwargs['offset'] if 'offset' in kwargs else 0
+            user_id = kwargs['user_id'] if 'user_id' in kwargs else None
+            cur.callproc(
+                'select_usercourses',
+                args=(cls.__name__.lower(), offset,  limit, user_id)
+            )
+            objects = next(cur.stored_results())
+            rows = objects.fetchall()
+            for row in rows:
+                props = dict(zip(cls.props(), row))
+                objs.append(cls(**props))
+        except Error as e:
+            print(e)
+            con.rollback()
+
+        return objs

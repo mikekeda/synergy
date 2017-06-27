@@ -66,7 +66,6 @@ class BaseModel():
         objs = []
         try:
             # todo: add search by username and paginate
-            # todo: add filter UserCourse by user_id
             limit = kwargs['limit'] if 'limit' in kwargs else 15
             offset = kwargs['offset'] if 'offset' in kwargs else 0
             cur.callproc(

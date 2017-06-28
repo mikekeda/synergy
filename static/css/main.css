@@ -26,7 +26,6 @@
   margin-bottom: 3rem!important;
   margin-top: 3rem!important;
 }
-
 .my-6 {
   margin-bottom: 3.6rem!important;
   margin-top: 3.6rem!important;
@@ -37,6 +36,9 @@
   margin: 0;
 }
 
-.user-seatch input[type=search] ~ .material-icons {
+.user-search label {
+  cursor: pointer;
+}
+.user-search input[type=search] ~ .material-icons {
 	top: 10px;
 }

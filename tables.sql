@@ -9,17 +9,59 @@ USE `Users`;
 
 DELIMITER ;;
 
-CREATE PROCEDURE `select_objects`(IN table_name VARCHAR(64), IN offset_num INT, IN limit_num INT)
+DROP PROCEDURE IF EXISTS `get_object`;;
+CREATE PROCEDURE `get_object`(IN table_name VARCHAR(64), IN id INT)
 BEGIN
-  SET @query = CONCAT('select * from ',table_name,' limit ', limit_num, ', ', offset_num);
+  SET @query = CONCAT('SELECT * FROM ', table_name, ' WHERE id=', id, ' LIMIT 1');
   PREPARE stmt FROM @query;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
 END;;
 
+DROP PROCEDURE IF EXISTS `select_objects`;;
+CREATE PROCEDURE `select_objects`(IN `table_name` varchar(64), IN `offset_num` INT, IN `limit_num` INT)
+BEGIN
+  SET @query = CONCAT('SELECT * FROM ',table_name,' LIMIT ', limit_num, ', ', offset_num);
+  PREPARE stmt FROM @query;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  SET @query = CONCAT('SELECT COUNT(*) from ',table_name);
+  PREPARE stmt FROM @query;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+END;;
+
+DROP PROCEDURE IF EXISTS `select_users`;;
+CREATE PROCEDURE `select_users`(IN table_name VARCHAR(64), IN offset_num INT, IN limit_num INT, IN search VARCHAR(64))
+BEGIN
+  SET @query = CONCAT('SELECT * FROM ',table_name);
+  IF search IS NOT NULL THEN
+    SET @query = CONCAT(@query, " WHERE name LIKE '%", search, "%'");
+  END IF;
+  IF limit_num IS NOT NULL THEN
+    SET @query = CONCAT(@query, ' LIMIT ', limit_num);
+  END IF;
+  IF offset_num IS NOT NULL THEN
+    SET @query = CONCAT(@query, ' OFFSET ', offset_num);
+  END IF;
+  PREPARE stmt FROM @query;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  SET @query = CONCAT('SELECT COUNT(*) FROM ',table_name);
+  IF search IS NOT NULL THEN
+    SET @query = CONCAT(@query, " WHERE name LIKE '%", search, "%'");
+  END IF;
+  PREPARE stmt FROM @query;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+END;;
+
+DROP PROCEDURE IF EXISTS `select_usercourses`;;
 CREATE PROCEDURE `select_usercourses`(IN table_name VARCHAR(64), IN offset_num INT, IN limit_num INT, IN user_id INT)
 BEGIN
-  SET @query = CONCAT('select * from ',table_name);
+  SET @query = CONCAT('SELECT * FROM ',table_name);
   IF user_id IS NOT NULL THEN
     SET @query = CONCAT(@query, ' WHERE user_id = ', user_id);
   END IF;
@@ -33,7 +75,34 @@ BEGIN
   PREPARE stmt FROM @query;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
-END$$
+END;;
+
+DROP PROCEDURE IF EXISTS `insert_object`;;
+CREATE PROCEDURE `insert_object`(IN table_name VARCHAR(64), IN fields VARCHAR(256), IN insert_values VARCHAR(256))
+BEGIN
+  SET @query = CONCAT('INSERT INTO ', table_name, ' (', fields, ') VALUES(', insert_values, ')');
+  PREPARE stmt FROM @query;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+END;;
+
+DROP PROCEDURE IF EXISTS `update_object`;;
+CREATE PROCEDURE `update_object`(IN table_name VARCHAR(64), IN update_values VARCHAR(256), IN id INT)
+BEGIN
+  SET @query = CONCAT('UPDATE ', table_name, ' SET ', update_values, ' WHERE id=', id);
+  PREPARE stmt FROM @query;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+END;;
+
+DROP PROCEDURE IF EXISTS `delete_objects`;;
+CREATE PROCEDURE `delete_objects`(IN table_name VARCHAR(64), IN field VARCHAR(64), IN value VARCHAR(64))
+BEGIN
+  SET @query = CONCAT('DELETE FROM ', table_name, ' WHERE ', field, '=', value);
+  PREPARE stmt FROM @query;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+END;;
 
 DELIMITER ;
 

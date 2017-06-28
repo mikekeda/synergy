@@ -6,6 +6,7 @@ from sanic_session import InMemorySessionInterface
 
 from models import User, Course
 from forms import UserForm, UserEditForm
+from template_tags import update_param
 
 app = Sanic(__name__)
 app.config['SECRET_KEY'] = 'test secret'
@@ -13,6 +14,8 @@ jinja = SanicJinja2(app)
 
 # todo: use Redis
 session_interface = InMemorySessionInterface()
+
+app.jinja_env.globals.update(update_param=update_param)
 
 
 @app.middleware('request')
@@ -35,15 +38,56 @@ app.static('/static', './static')
 @app.route("/")
 async def users_page(request):
     """Users list"""
-    users = User.select()
-    return jinja.render('users.html', request, users=users)
+    # get current page
+    try:
+        page = int(request.args.get('page', 1))
+    except ValueError:
+        page = 1
+
+    # get amount of items for a page
+    try:
+        items_per_page = int(request.args.get('items', 15))
+    except ValueError:
+        items_per_page = 15
+
+    # get search string
+    search = request.args.get('search', '')
+
+    users = User.select(page=page, limit=items_per_page, search=search)
+    pages = (users['total'] - 1) // items_per_page + 1
+
+    return jinja.render(
+        'users.html',
+        request,
+        users=users['objects'],
+        pages=pages,
+        current_page=page,
+        items_per_page=items_per_page,
+        search=search
+    )
 
 
 @app.route("/courses")
 async def courses_page(request):
     """Courses list"""
-    courses = list(Course.select())
-    return jinja.render('courses.html', request, courses=courses)
+    # max 15 courses on page
+    items_per_page = 15
+    # get current page
+    try:
+        page = int(request.args.get('page', 1))
+    except ValueError:
+        page = 1
+
+    courses = Course.select(page=page, limit=items_per_page)
+    pages = (courses['total'] - 1) // items_per_page + 1
+
+    return jinja.render(
+        'courses.html',
+        request,
+        courses=courses['objects'],
+        pages=pages,
+        current_page=page
+    )
 
 
 class UserView(HTTPMethodView):
@@ -51,7 +95,7 @@ class UserView(HTTPMethodView):
     def get(self, request, uid=None):
         """User edit/create form"""
         if uid:
-            user = User.get(id=uid)
+            user = User.get(uid)
             form = UserEditForm(request, obj=user)
         else:
             form = UserForm(request)
@@ -69,7 +113,7 @@ class UserView(HTTPMethodView):
 
         if form.validate():
             if uid:
-                user = User.get(id=uid)
+                user = User.get(uid)
                 form.save(obj=user)
             else:
                 form.save()
@@ -85,7 +129,7 @@ class UserView(HTTPMethodView):
 
     def delete(self, request, uid):
         """User deletion"""
-        User.get(id=uid).delete_instance()
+        User.delete(id=uid)
 
         return json({'message': 'User was deleted'})
 

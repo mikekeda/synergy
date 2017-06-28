@@ -3,12 +3,18 @@ from wtforms import StringField, SelectField, SelectMultipleField
 from wtforms.fields.html5 import EmailField, TelField
 from wtforms.validators import Optional, DataRequired, Email, Regexp
 
-from models import User, Course, UserCourse, STATUSES
+from models import BaseModel, User, Course, UserCourse, STATUSES
 
 
 class UserForm(SanicForm):
     """User create form"""
-    name = StringField('Name', validators=[DataRequired()])
+    name = StringField('Name', validators=[
+        DataRequired(),
+        Regexp(
+            '^[a-zA-Z]+$',
+            message='Only letters allowed!'
+        ),
+    ])
     email = EmailField('E-mail', validators=[
         DataRequired(),
         Email(message='Please enter a valid email address!'),
@@ -24,20 +30,18 @@ class UserForm(SanicForm):
         Optional(),
         Regexp(
             '^\+?[0-9]{3}-?[0-9]{6,12}$',
-            message='Please enter a valid phone number!'
+            message='Please enter a valid mobile number!'
         ),
     ])
     status = SelectField('Status', choices=STATUSES)
 
     def save(self, *args, **kwargs):
-        # todo: Improve this
-        user = User(
-            name=self.name.data,
-            email=self.email.data,
-            phone=self.phone.data,
-            mobile=self.mobile.data,
-            status=self.status.data,
-        )
+        props = [p for p in User.props() if p not in BaseModel.props()]
+        props = dict(zip(
+            props,
+            [getattr(self, prop).data for prop in props]
+        ))
+        user = User(**props)
         user.save()
 
         return user
@@ -51,11 +55,11 @@ class UserEditForm(UserForm):
         super().__init__(*args, **kwargs)
 
         # list of courses
-        courses = [('', '-- select courses --')]
-        courses.extend(
-            [(str(course.id), course.name) for course in Course.select()]
+        courses = Course.select()
+        self.courses.choices = [('', '-- select courses --')]
+        self.courses.choices.extend(
+            [(str(course.id), course.name) for course in courses['objects']]
         )
-        self.courses.choices = courses
 
         # user's courses
         user = kwargs.get('obj')
@@ -76,5 +80,4 @@ class UserEditForm(UserForm):
 
             UserCourse.delete(user_id=user.id)
             for course_id in self.courses.data:
-                # todo: improve this
                 UserCourse(user_id=user.id, course_id=course_id).save()

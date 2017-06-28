@@ -1,20 +1,16 @@
 from mysql.connector import MySQLConnection, Error
 
-# todo: don't commit this
-db_config = {
-    'user': 'test_admin',
-    'password': 'test_admin_pass',
-    'host': '127.0.0.1',
-    'database': 'Users'
-}
+from settings import db_config
 
 STATUSES = (
     ('0', 'Inactive'),
     ('1', 'Active'),
 )
+# todo: test for SQL injection
+# todo: add more comments
 
 
-class BaseModel():
+class BaseModel:
     """BaseModel model"""
     id = 0
 
@@ -32,26 +28,19 @@ class BaseModel():
         return []
 
     @classmethod
-    def get(cls, **kwargs):
+    def get(cls, id):
         con = MySQLConnection(**db_config)
         cur = con.cursor()
         obj = None
         try:
-            conditions = []
-            for key in kwargs:
-                assert (key in dir(cls)), "{} not valid property".format(key)
-                conditions.append("{}=%s".format(key))
-            conditions = ' AND '.join(conditions)
-
-            query = "SELECT * FROM `{}` WHERE {} LIMIT 1".format(
-                cls.__name__.lower(),
-                conditions
+            cur.callproc(
+                'get_object',
+                args=(cls.__name__.lower(), id)
             )
-            cur.execute(query, list(kwargs.values()))
-            row = cur.fetchone()
-            if row:
-                props = dict(zip(cls.props(), row))
-                obj = cls(**props)
+            results = list(cur.stored_results())
+            row = results[0].fetchone()
+            props = dict(zip(cls.props(), row))
+            obj = cls(**props)
         except Error as e:
             print(e)
             con.rollback()
@@ -63,49 +52,29 @@ class BaseModel():
     def select(cls, **kwargs):
         con = MySQLConnection(**db_config)
         cur = con.cursor()
-        objs = []
+        objs = {
+            'objects': [],
+            'total': 0,
+        }
         try:
-            # todo: add search by username and paginate
             limit = kwargs['limit'] if 'limit' in kwargs else 15
-            offset = kwargs['offset'] if 'offset' in kwargs else 0
+            page = kwargs['page'] if 'page' in kwargs else 1
+            offset = (page - 1) * limit
             cur.callproc(
                 'select_objects',
                 args=(cls.__name__.lower(), limit, offset)
             )
-            objects = next(cur.stored_results())
-            rows = objects.fetchall()
+            results = list(cur.stored_results())
+            rows = results[0].fetchall()
+            objs['total'] = results[1].fetchone()[0]
             for row in rows:
                 props = dict(zip(cls.props(), row))
-                objs.append(cls(**props))
+                objs['objects'].append(cls(**props))
         except Error as e:
             print(e)
             con.rollback()
 
         return objs
-
-    def delete_instance(self):
-        con = MySQLConnection(**db_config)
-        cur = con.cursor()
-        result = False
-        try:
-            for class_name in self._foreign_classes():
-                cl = globals()[class_name]
-                condition = {
-                    '{}_id'.format(type(self).__name__.lower()): self.id
-                }
-                cl.delete(**condition)
-
-            query = "DELETE FROM `{}` WHERE id=%s".format(
-                self.__class__.__name__.lower()
-            )
-            result = cur.execute(query, (self.id,))
-            con.commit()
-        except Error as e:
-            print(e)
-            con.rollback()
-        con.close()
-
-        return result
 
     @classmethod
     def delete(cls, **kwargs):
@@ -113,26 +82,27 @@ class BaseModel():
         cur = con.cursor()
         result = False
         try:
-            conditions = []
-            for key in kwargs:
-                assert (key in dir(cls)), "{} not valid property".format(key)
-                conditions.append("{}=%s".format(key))
-            conditions = ' AND '.join(conditions)
+            # for now only first condition will be taken
+            key, value = kwargs.popitem()
+            assert (key in dir(cls)), "{} not valid property".format(key)
 
-            if conditions:
-                query = "DELETE FROM `{}` WHERE {}".format(
-                    cls.__name__.lower(),
-                    conditions
-                )
-            else:
-                query = "DELETE FROM `{}`".format(
-                    cls.__name__.lower(),
-                )
-            result = cur.execute(query, list(kwargs.values()))
+            # delete all rows where are foreign key to current object
+            if key == 'id':
+                for class_name in cls._foreign_classes():
+                    cl = globals()[class_name]
+                    condition = {
+                        '{}_id'.format(cls.__name__.lower()): value
+                    }
+                    cl.delete(**condition)
+
+            cur.callproc(
+                'delete_objects',
+                args=(cls.__name__.lower(), key, value)
+            )
             con.commit()
+            result = True
         except Error as e:
             print(e)
-            print(query)
             con.rollback()
         con.close()
 
@@ -143,29 +113,43 @@ class BaseModel():
         cur = con.cursor()
         result = False
         try:
-            insert_values = []
-            update_values = []
-            dict_update_values = {}
+            dict_values = {}
             for key in self.props():
-                val = getattr(self, key)
-                insert_values.append(val)
                 if key not in super(type(self), self).props():
-                    dict_update_values[key] = val
-                    update_values.append(val)
+                    dict_values[key] = getattr(self, key)
 
-            query = """
-            INSERT INTO `{}` ({}) VALUES({}) ON DUPLICATE KEY UPDATE {}
-            """.format(
-                self.__class__.__name__.lower(),
-                ','.join(self.props()),
-                ','.join(['%s' for _ in insert_values]),
-                ','.join(["{}=%s".format(key) for key in dict_update_values]),
-            )
-            result = cur.execute(query, insert_values + update_values)
+            if self.id == 0:
+                # new object, need to insert row
+                values = []
+                for key in dict_values:
+                    values.append("'{}'".format(dict_values[key]))
+
+                cur.callproc(
+                    'insert_object',
+                    args=(
+                        type(self).__name__.lower(),
+                        ','.join(dict_values.keys()),
+                        ','.join(values),
+                    )
+                )
+            else:
+                # need to update row
+                values = []
+                for key in dict_values:
+                    values.append("{}='{}'".format(key, dict_values[key]))
+
+                cur.callproc(
+                    'update_object',
+                    args=(
+                        type(self).__name__.lower(),
+                        ','.join(values),
+                        self.id,
+                    )
+                )
+
             con.commit()
         except Error as e:
             print(e)
-            print(cur._executed)
             con.rollback()
         con.close()
 
@@ -197,6 +181,36 @@ class User(BaseModel):
     @staticmethod
     def _foreign_classes():
         return ['UserCourse']
+
+    @classmethod
+    def select(cls, **kwargs):
+        con = MySQLConnection(**db_config)
+        cur = con.cursor()
+        objs = {
+            'objects': [],
+            'total': 0,
+        }
+        try:
+            limit = kwargs['limit'] if 'limit' in kwargs else 15
+            page = kwargs['page'] if 'page' in kwargs else 1
+            search = kwargs['search'] if 'search' in kwargs else None
+            search = search if search != '' else None
+            offset = (page - 1) * limit
+            cur.callproc(
+                'select_users',
+                args=(cls.__name__.lower(), offset, limit, search)
+            )
+            results = list(cur.stored_results())
+            rows = results[0].fetchall()
+            objs['total'] = results[1].fetchone()[0]
+            for row in rows:
+                props = dict(zip(cls.props(), row))
+                objs['objects'].append(cls(**props))
+        except Error as e:
+            print(e)
+            con.rollback()
+
+        return objs
 
 
 class Course(BaseModel):
@@ -235,14 +249,15 @@ class UserCourse(BaseModel):
         objs = []
         try:
             limit = kwargs['limit'] if 'limit' in kwargs else 15
-            offset = kwargs['offset'] if 'offset' in kwargs else 0
+            page = kwargs['page'] if 'page' in kwargs else 1
+            offset = (page - 1) * limit
             user_id = kwargs['user_id'] if 'user_id' in kwargs else None
             cur.callproc(
                 'select_usercourses',
                 args=(cls.__name__.lower(), offset,  limit, user_id)
             )
-            objects = next(cur.stored_results())
-            rows = objects.fetchall()
+            results = list(cur.stored_results())
+            rows = results[0].fetchall()
             for row in rows:
                 props = dict(zip(cls.props(), row))
                 objs.append(cls(**props))

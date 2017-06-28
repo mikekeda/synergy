@@ -17,20 +17,20 @@
   <div class="row">
     <div class="col s4">
       <a class="btn-floating waves-effect waves-light red" href="/user/"><i class="material-icons">add</i></a>
-      <div class="user-seatch input-field d-inline-block no-margin">
-        <input id="search" class="no-margin" type="search" required>
+      <div class="user-search input-field d-inline-block no-margin">
+        <input id="search" class="no-margin" type="search" required value="{{ search }}" placeholder="search">
         <label class="label-icon" for="search"><i class="material-icons">search</i></label>
-        <i class="material-icons">close</i>
+        <i class="material-icons close">close</i>
       </div>
     </div>
     <div class="col s6"><h1 class="no-margin text-uppercase h4">Users</h1></div>
     <div class="col s2">
       <div class="input-field no-margin">
-        <select>
+        <select class="items-per-page">
           <option value="" disabled>Users per page</option>
-          <option value="1">10</option>
-          <option value="2" selected>15</option>
-          <option value="3">20</option>
+          <option value="10"{% if items_per_page == 10 %} selected{% endif %}>10</option>
+          <option value="15"{% if items_per_page == 15 %} selected{% endif %}>15</option>
+          <option value="20"{% if items_per_page == 20 %} selected{% endif %}>20</option>
         </select>
       </div>
     </div>
@@ -42,7 +42,7 @@
         <th class="no-br-radius white-text">Name</th>
         <th class="no-br-radius white-text">E-mail</th>
         <th class="no-br-radius white-text">Status</th>
-        <th class="no-br-radius white-text">Actions</th>
+        <th class="no-br-radius white-text" width="100">Actions</th>
       </tr>
     </thead>
 
@@ -61,14 +61,5 @@
     </tbody>
   </table>
 
-  <!-- todo: Continue working on pager -->
-  <ul class="pagination center-align my-5">
-    <li class="disabled"><a href="#!"><i class="material-icons">chevron_left</i></a></li>
-    <li class="active"><a href="#!">1</a></li>
-    <li class="waves-effect"><a href="#!">2</a></li>
-    <li class="waves-effect"><a href="#!">3</a></li>
-    <li class="waves-effect"><a href="#!">4</a></li>
-    <li class="waves-effect"><a href="#!">5</a></li>
-    <li class="waves-effect"><a href="#!"><i class="material-icons">chevron_right</i></a></li>
-  </ul>
+  {% include 'pager.html' %}
 {% endblock %}

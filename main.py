@@ -67,7 +67,7 @@ async def users_page(request):
         pages=pages,
         current_page=page,
         items_per_page=items_per_page,
-        search=search
+        search=search,
     )
 
 

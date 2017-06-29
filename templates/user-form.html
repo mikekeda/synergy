@@ -16,7 +16,7 @@
             <div class="input-field col s12">
               {% if field.name != 'csrf_token' and field.type != 'SelectField' and field.type != 'SelectMultipleField' %}
                 <input id="{{ field.name }}" {% if not new and field.name == 'name' %}readonly{% endif %} name="{{ field.name }}" type="{{ field.widget.input_type }}" value="{{ field.data|default('', True) }}" class="validate{% if field.errors %} invalid{% endif %}">
-                <label for="{{ field.name }}" {% if field.errors %} data-error="{{ field.errors|join('. ') }}"{% endif %}>{{ field.label.text }}</label>
+                <label for="{{ field.name }}" {% if field.errors %} data-error="{{ field.errors|join('. ') }}"{% endif %}{% if field.flags.required %} class="required"{% endif %}>{{ field.label.text }}</label>
               {% else %}
                 {{ field }}
                 {% if field.name != 'csrf_token' %}
@@ -26,7 +26,8 @@
             </div>
           {% endfor %}
           <div class="input-field col s12">
-            <button class="btn waves-effect waves-light right" type="submit" name="action">Save
+            <button class="btn waves-effect waves-light right" type="submit" name="action">
+              {% if new %}Create{% else %}Save{% endif %}
               <i class="material-icons right">send</i>
             </button>
           </div>

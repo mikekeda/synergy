@@ -3,6 +3,7 @@ from sanic.views import HTTPMethodView
 from sanic.response import json, redirect
 from sanic_jinja2 import SanicJinja2
 from sanic_session import InMemorySessionInterface
+import re
 
 from models import User, Course
 from forms import UserForm, UserEditForm
@@ -38,13 +39,13 @@ app.static('/static', './static')
 @app.route("/")
 async def users_page(request):
     """Users list"""
-    # get current page
+    # get current page, convert to int to prevent SQL injection
     try:
         page = int(request.args.get('page', 1))
     except ValueError:
         page = 1
 
-    # get amount of items for a page
+    # get amount of items for a page, convert to int to prevent SQL injection
     try:
         items_per_page = int(request.args.get('items', 15))
     except ValueError:
@@ -52,6 +53,9 @@ async def users_page(request):
 
     # get search string
     search = request.args.get('search', '')
+    # for user name only letters are allowed
+    # remove any other charset to prevent SQL injection
+    search = re.sub('[^a-zA-Z]+', '', search)
 
     users = User.select(page=page, limit=items_per_page, search=search)
     pages = (users['total'] - 1) // items_per_page + 1
@@ -109,6 +113,7 @@ class UserView(HTTPMethodView):
 
     def post(self, request, uid=None):
         """Submit for User edit/create form"""
+        # todo: impalement ajax form submit
         form = UserEditForm(request) if uid else UserForm(request)
 
         if form.validate():

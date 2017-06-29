@@ -6,7 +6,6 @@ STATUSES = (
     ('0', 'Inactive'),
     ('1', 'Active'),
 )
-# todo: test for SQL injection
 # todo: add more comments
 
 

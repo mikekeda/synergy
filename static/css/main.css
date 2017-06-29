@@ -42,3 +42,11 @@
 .user-search input[type=search] ~ .material-icons {
 	top: 10px;
 }
+
+.table-list td,
+.table-list th {
+  padding: 15px;
+}
+.actions-tr {
+  width: 120px;
+}

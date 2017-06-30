@@ -2,7 +2,11 @@ from sanic import Sanic
 from sanic.views import HTTPMethodView
 from sanic.response import json, redirect
 from sanic_jinja2 import SanicJinja2
-from sanic_session import InMemorySessionInterface
+from sanic_session import RedisSessionInterface
+import asyncio_redis
+import aiocache
+from aiocache import RedisCache, cached
+from aiocache.serializers import StringSerializer
 import re
 
 from models import User, Course
@@ -12,11 +16,31 @@ from template_tags import update_param
 app = Sanic(__name__)
 app.config['SECRET_KEY'] = 'test secret'
 jinja = SanicJinja2(app)
-
-# todo: use Redis
-session_interface = InMemorySessionInterface()
+cache = RedisCache(db=4)
 
 app.jinja_env.globals.update(update_param=update_param)
+
+
+class Redis:
+    """
+    A simple wrapper class that allows you to share a connection
+    pool across your application.
+    """
+    _pool = None
+
+    async def get_redis_pool(self):
+        if not self._pool:
+            self._pool = await asyncio_redis.Pool.create(
+                host='localhost', port=6379, db=4, poolsize=10
+            )
+
+        return self._pool
+
+
+redis = Redis()
+
+# pass the getter method for the connection pool into the session
+session_interface = RedisSessionInterface(redis.get_redis_pool)
 
 
 @app.middleware('request')
@@ -39,6 +63,7 @@ app.static('/static', './static')
 @app.route("/")
 async def users_page(request):
     """Users list"""
+    await cache.set('key', 'value')
     # get current page, convert to int to prevent SQL injection
     try:
         page = int(request.args.get('page', 1))

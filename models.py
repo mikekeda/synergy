@@ -1,6 +1,8 @@
 from mysql.connector import MySQLConnection, Error
+from aiocache import caches
+import asyncio
 
-from settings import db_config
+from settings import db_config, default_page, default_items_per_page
 
 STATUSES = (
     ('0', 'Inactive'),
@@ -10,7 +12,11 @@ STATUSES = (
 
 
 class BaseModel:
-    """BaseModel model"""
+    """
+    Base model that provide common methods
+
+    :param id: object id
+    """
     id = 0
 
     def __init__(self, **kwargs):
@@ -27,19 +33,66 @@ class BaseModel:
         return []
 
     @classmethod
-    def get(cls, id):
+    async def _clean_cache(cls, obj_id=None):
+        """Delete cache keys those are related to the class and obj_id"""
+        cache = caches.get('default')
+        class_name = cls.__name__.lower()
+
+        # probably user will be redirected to page which is using this cache
+        # so we need to clean it first
+        await cache.delete('{}s_{}_{}_'.format(
+            class_name,
+            default_page,
+            default_items_per_page,
+        ))
+
+        if obj_id:
+            # delete specific object cache if obj_id was provided
+            keys = await cache.raw('keys', '{}_{}'.format(class_name, obj_id))
+        else:
+            # not sure which object was modified, so delete all object caches
+            keys = await cache.raw('keys', '{}_*'.format(class_name))
+        for key in keys:
+            await cache.delete(key)
+
+        # delete pages caches
+        keys = await cache.raw('keys', '{}s_*'.format(class_name))
+        for key in keys:
+            await cache.delete(key)
+
+    @classmethod
+    async def _set_cache(cls, obj):
+        """Save object to cache"""
+        cache = caches.get('default')
+
+        return await cache.set(
+            '{}_{}'.format(cls.__name__.lower(), obj.id),
+            obj
+        )
+
+    @classmethod
+    async def get_from_cache(cls, obj_id):
+        """Get object from cache"""
+        cache = caches.get('default')
+
+        return await cache.get('{}_{}'.format(cls.__name__.lower(), obj_id))
+
+    @classmethod
+    def get(cls, obj_id):
         con = MySQLConnection(**db_config)
         cur = con.cursor()
         obj = None
         try:
             cur.callproc(
                 'get_object',
-                args=(cls.__name__.lower(), id)
+                args=(cls.__name__.lower(), obj_id)
             )
             results = list(cur.stored_results())
             row = results[0].fetchone()
             props = dict(zip(cls.props(), row))
             obj = cls(**props)
+
+            asyncio.ensure_future(cls._set_cache(obj))
         except Error as e:
             print(e)
             con.rollback()
@@ -94,6 +147,12 @@ class BaseModel:
                     }
                     cl.delete(**condition)
 
+                    # asynchronously delete class and object cache
+                    asyncio.ensure_future(cls._clean_cache(value))
+            else:
+                # asynchronously delete class and all object caches
+                asyncio.ensure_future(cls._clean_cache())
+
             cur.callproc(
                 'delete_objects',
                 args=(cls.__name__.lower(), key, value)
@@ -147,6 +206,9 @@ class BaseModel:
                 )
 
             con.commit()
+
+            # asynchronously delete class and object cache
+            asyncio.ensure_future(type(self)._clean_cache(self.id))
         except Error as e:
             print(e)
             con.rollback()
@@ -156,7 +218,15 @@ class BaseModel:
 
 
 class User(BaseModel):
-    """User model"""
+    """
+    User model
+
+    :param name: user name
+    :param email: user email
+    :param phone: user phone number
+    :param mobile: user mobile phone number
+    :param status: user status (0 - Inactive, 1 - Active)
+    """
     name = ''
     email = ''
     phone = ''
@@ -213,7 +283,12 @@ class User(BaseModel):
 
 
 class Course(BaseModel):
-    """Course model"""
+    """
+    Course model
+
+    :param code: course code
+    :param name: course name
+    """
     code = ''
     name = ''
 
@@ -230,7 +305,12 @@ class Course(BaseModel):
 
 
 class UserCourse(BaseModel):
-    """User/Course relation model"""
+    """
+    User/Course relation model
+
+    :param user_id: user foreign key
+    :param course_id: course foreign key
+    """
     user_id = 0
     course_id = 0
 

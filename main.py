@@ -1,22 +1,21 @@
 from sanic import Sanic
 from sanic.views import HTTPMethodView
-from sanic.response import json, redirect
+from sanic.response import html, json, redirect
 from sanic_jinja2 import SanicJinja2
 from sanic_session import RedisSessionInterface
 import asyncio_redis
-import aiocache
-from aiocache import RedisCache, cached
-from aiocache.serializers import StringSerializer
+from aiocache import caches
 import re
 
 from models import User, Course
 from forms import UserForm, UserEditForm
 from template_tags import update_param
+from settings import redis_session_config, redis_cache_config
+from settings import default_page, default_items_per_page
 
 app = Sanic(__name__)
 app.config['SECRET_KEY'] = 'test secret'
 jinja = SanicJinja2(app)
-cache = RedisCache(db=4)
 
 app.jinja_env.globals.update(update_param=update_param)
 
@@ -30,9 +29,7 @@ class Redis:
 
     async def get_redis_pool(self):
         if not self._pool:
-            self._pool = await asyncio_redis.Pool.create(
-                host='localhost', port=6379, db=4, poolsize=10
-            )
+            self._pool = await asyncio_redis.Pool.create(**redis_session_config)
 
         return self._pool
 
@@ -41,6 +38,12 @@ redis = Redis()
 
 # pass the getter method for the connection pool into the session
 session_interface = RedisSessionInterface(redis.get_redis_pool)
+
+
+# Initialize Redis cache
+@app.listener('before_server_start')
+def init_cache(sanic, loop):
+    caches.set_config(redis_cache_config)
 
 
 @app.middleware('request')
@@ -63,18 +66,17 @@ app.static('/static', './static')
 @app.route("/")
 async def users_page(request):
     """Users list"""
-    await cache.set('key', 'value')
     # get current page, convert to int to prevent SQL injection
     try:
-        page = int(request.args.get('page', 1))
+        page = int(request.args.get('page', default_page))
     except ValueError:
-        page = 1
+        page = default_page
 
-    # get amount of items for a page, convert to int to prevent SQL injection
+    # get amount of items for page, convert to int to prevent SQL injection
     try:
-        items_per_page = int(request.args.get('items', 15))
+        items_per_page = int(request.args.get('items', default_items_per_page))
     except ValueError:
-        items_per_page = 15
+        items_per_page = default_items_per_page
 
     # get search string
     search = request.args.get('search', '')
@@ -82,49 +84,67 @@ async def users_page(request):
     # remove any other charset to prevent SQL injection
     search = re.sub('[^a-zA-Z]+', '', search)
 
-    users = User.select(page=page, limit=items_per_page, search=search)
-    pages = (users['total'] - 1) // items_per_page + 1
+    # try to get page from the cache
+    cache = caches.get('default')
+    # todo: maybe not need use cache if there is search
+    key = '_'.join(['users', str(page), str(items_per_page), search])
+    rendered_page = await cache.get(key)
 
-    return jinja.render(
-        'users.html',
-        request,
-        users=users['objects'],
-        pages=pages,
-        current_page=page,
-        items_per_page=items_per_page,
-        search=search,
-    )
+    if not rendered_page:
+        users = User.select(page=page, limit=items_per_page, search=search)
+        pages = (users['total'] - 1) // items_per_page + 1
+
+        rendered_page = jinja.render_string(
+            'users.html',
+            request,
+            users=users['objects'],
+            pages=pages,
+            current_page=page,
+            items_per_page=items_per_page,
+            search=search,
+        )
+        # set page cache
+        await cache.set(key, rendered_page)
+    return html(rendered_page)
 
 
 @app.route("/courses")
 async def courses_page(request):
     """Courses list"""
-    # max 15 courses on page
-    items_per_page = 15
     # get current page
     try:
-        page = int(request.args.get('page', 1))
+        page = int(request.args.get('page', default_page))
     except ValueError:
-        page = 1
+        page = default_page
 
-    courses = Course.select(page=page, limit=items_per_page)
-    pages = (courses['total'] - 1) // items_per_page + 1
+    # try to get page from the cache
+    cache = caches.get('default')
+    key = '_'.join(['courses', str(page), str(default_items_per_page)])
+    rendered_page = await cache.get(key)
 
-    return jinja.render(
-        'courses.html',
-        request,
-        courses=courses['objects'],
-        pages=pages,
-        current_page=page
-    )
+    if not rendered_page:
+        courses = Course.select(page=page, limit=default_items_per_page)
+        pages = (courses['total'] - 1) // default_items_per_page + 1
+
+        rendered_page = jinja.render_string(
+            'courses.html',
+            request,
+            courses=courses['objects'],
+            pages=pages,
+            current_page=page
+        )
+        # set page cache
+        await cache.set(key, rendered_page)
+    return html(rendered_page)
 
 
 class UserView(HTTPMethodView):
-
-    def get(self, request, uid=None):
+    async def get(self, request, uid=None):
         """User edit/create form"""
         if uid:
-            user = User.get(uid)
+            user = await User.get_from_cache(uid)
+            if not user:
+                user = User.get(uid)
             form = UserEditForm(request, obj=user)
         else:
             form = UserForm(request)
@@ -136,14 +156,16 @@ class UserView(HTTPMethodView):
             new=uid == ''
         )
 
-    def post(self, request, uid=None):
+    async def post(self, request, uid=None):
         """Submit for User edit/create form"""
         # todo: impalement ajax form submit
         form = UserEditForm(request) if uid else UserForm(request)
 
         if form.validate():
             if uid:
-                user = User.get(uid)
+                user = await User.get_from_cache(uid)
+                if not user:
+                    user = User.get(uid)
                 form.save(obj=user)
             else:
                 form.save()
@@ -157,7 +179,7 @@ class UserView(HTTPMethodView):
 
         return redirect("/")
 
-    def delete(self, request, uid):
+    async def delete(self, request, uid):
         """User deletion"""
         User.delete(id=uid)
 

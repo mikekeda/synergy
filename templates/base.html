@@ -19,19 +19,19 @@
       <div class="nav-wrapper container"><a id="logo-container" href="/" class="brand-logo">Test for You</a>
         <ul class="right hide-on-med-and-down">
           <li>
-            <a href="/" class='{% if request.path == '/' %}active{% else %}grey-text{% endif %}'>Users</a>
+            <a href="/" class="{% if request.path == '/' %}active{% else %}grey-text{% endif %}">Users</a>
           </li>
           <li>
-            <a href="/courses" class='{% if request.path == '/courses' %}active{% else %}grey-text{% endif %}'>Courses</a>
+            <a href="/courses" class="{% if request.path == '/courses' %}active{% else %}grey-text{% endif %}">Courses</a>
           </li>
         </ul>
 
         <ul id="nav-mobile" class="side-nav">
           <li>
-            <a href="/" class='{% if request.path == '/' %}active{% else %}grey-text{% endif %}'>Users</a>
+            <a href="/" class="{% if request.path == '/' %}active{% else %}grey-text{% endif %}">Users</a>
           </li>
           <li>
-            <a href="/courses" class='{% if request.path == '/courses' %}active{% else %}grey-text{% endif %}'>Courses</a>
+            <a href="/courses" class="{% if request.path == '/courses' %}active{% else %}grey-text{% endif %}">Courses</a>
           </li>
         </ul>
         <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>

@@ -187,4 +187,4 @@ class UserView(HTTPMethodView):
 
 app.add_route(UserView.as_view(), '/user/(<uid>?)')
 
-app.run(host="0.0.0.0", port=8000, debug=True)
+app.run(host="0.0.0.0", port=8080)

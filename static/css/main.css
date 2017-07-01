@@ -40,6 +40,9 @@
   margin-top: 3.6rem!important;
 }
 
+body > .container {
+  min-height: calc(100vh - 222px);
+}
 
 .no-margin .select-wrapper .select-dropdown {
   margin: 0;

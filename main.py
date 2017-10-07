@@ -1,6 +1,7 @@
 from sanic import Sanic
 from sanic.views import HTTPMethodView
 from sanic.response import html, json, redirect
+from sanic.exceptions import abort
 from sanic_jinja2 import SanicJinja2
 from sanic_session import RedisSessionInterface
 import asyncio_redis
@@ -29,7 +30,9 @@ class Redis:
 
     async def get_redis_pool(self):
         if not self._pool:
-            self._pool = await asyncio_redis.Pool.create(**redis_session_config)
+            self._pool = await asyncio_redis.Pool.create(
+                **redis_session_config
+            )
 
         return self._pool
 
@@ -91,13 +94,18 @@ async def users_page(request):
     rendered_page = await cache.get(key)
 
     if not rendered_page:
-        users = User.select(page=page, limit=items_per_page, search=search)
-        pages = (users['total'] - 1) // items_per_page + 1
+        if search:
+            users = User.select().where(
+                User.name.contains(search)
+            ).paginate(page, items_per_page)
+        else:
+            users = User.select().paginate(page, items_per_page)
+        pages = (User.select().count() - 1) // items_per_page + 1
 
         rendered_page = jinja.render_string(
             'users.html',
             request,
-            users=users['objects'],
+            users=users,
             pages=pages,
             current_page=page,
             items_per_page=items_per_page,
@@ -123,13 +131,13 @@ async def courses_page(request):
     rendered_page = await cache.get(key)
 
     if not rendered_page:
-        courses = Course.select(page=page, limit=default_items_per_page)
-        pages = (courses['total'] - 1) // default_items_per_page + 1
+        courses = Course.select().paginate(page, default_items_per_page)
+        pages = (Course.select().count() - 1) // default_items_per_page + 1
 
         rendered_page = jinja.render_string(
             'courses.html',
             request,
-            courses=courses['objects'],
+            courses=courses,
             pages=pages,
             current_page=page
         )
@@ -144,7 +152,10 @@ class UserView(HTTPMethodView):
         if uid:
             user = await User.get_from_cache(uid)
             if not user:
-                user = User.get(uid)
+                try:
+                    user = User.get(User.id == uid)
+                except User.DoesNotExist:
+                    abort(404)
             form = UserEditForm(request, obj=user)
         else:
             form = UserForm(request)
@@ -165,25 +176,38 @@ class UserView(HTTPMethodView):
             if uid:
                 user = await User.get_from_cache(uid)
                 if not user:
-                    user = User.get(uid)
+                    try:
+                        user = User.get(User.id == uid)
+                    except User.DoesNotExist:
+                        abort(404)
                 form.save(obj=user)
-            else:
-                form.save()
-        else:
-            return jinja.render(
-                'user-form.html',
-                request,
-                form=form,
-                new=uid == ''
-            )
 
-        return redirect("/")
+                return redirect("/")
+            else:
+                user = form.save()
+                if user:
+                    return redirect("/")
+                else:
+                    form.name.errors.append('This username already taken!')
+
+        return jinja.render(
+            'user-form.html',
+            request,
+            form=form,
+            new=uid == ''
+        )
 
     async def delete(self, request, uid):
         """User deletion"""
-        User.delete(id=uid)
+        try:
+            user = User.get(User.id == uid)
+        except User.DoesNotExist:
+            abort(404)
+
+        user.delete_instance(recursive=True)
 
         return json({'message': 'User was deleted'})
+
 
 app.add_route(UserView.as_view(), '/user/(<uid>?)')
 

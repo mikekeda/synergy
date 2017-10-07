@@ -3,7 +3,7 @@ from wtforms import StringField, SelectField, SelectMultipleField
 from wtforms.fields.html5 import EmailField, TelField
 from wtforms.validators import Optional, DataRequired, Email, Regexp
 
-from models import BaseModel, User, Course, UserCourse, STATUSES
+from models import User, Course, UserCourse, STATUSES
 
 
 class UserForm(SanicForm):
@@ -36,13 +36,12 @@ class UserForm(SanicForm):
     status = SelectField('Status', choices=STATUSES)
 
     def save(self, *args, **kwargs):
-        props = [p for p in User.props() if p not in BaseModel.props()]
+        props = User.props()
         props = dict(zip(
-            props,
+            User.props(),
             [getattr(self, prop).data for prop in props]
         ))
-        user = User(**props)
-        user.save()
+        user = User(**props).save()
 
         return user
 
@@ -58,13 +57,15 @@ class UserEditForm(UserForm):
         courses = Course.select()
         self.courses.choices = [('', '-- select courses --')]
         self.courses.choices.extend(
-            [(str(course.id), course.name) for course in courses['objects']]
+            [(str(course.id), course.name) for course in courses]
         )
 
         # user's courses
         user = kwargs.get('obj')
         if user:
-            user_courses = UserCourse.select(user_id=user.id)
+            user_courses = UserCourse.select(UserCourse.course_id).where(
+                UserCourse.user_id == user.id
+            )
             self.courses.data = []
             for user_course in user_courses:
                 self.courses.data.append(str(user_course.course_id))
@@ -72,12 +73,14 @@ class UserEditForm(UserForm):
     def save(self, *args, **kwargs):
         user = kwargs.get('obj')
         if user:
+            # todo: Improve this (try to use props).
             user.email = self.email.data
             user.phone = self.phone.data
             user.mobile = self.mobile.data
             user.status = self.status.data
             user.save()
 
-            UserCourse.delete(user_id=user.id)
+            UserCourse.delete().where(UserCourse.user_id == user.id).execute()
+            UserCourse.clean_cache()
             for course_id in self.courses.data:
                 UserCourse(user_id=user.id, course_id=course_id).save()

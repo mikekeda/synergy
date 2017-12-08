@@ -1,11 +1,11 @@
 import os
+from urllib.parse import urlencode
 
 if os.environ.get('SYNERGY_DB_NAME') is None:
     os.environ['SYNERGY_DB_NAME'] = 'test_users'
 
 # from unittest.mock import patch, Mock, MagicMock
 # from unittest.mock import ANY
-from urllib.parse import urlencode
 
 from main import app
 from models import User, Course, MODELS
@@ -35,23 +35,23 @@ app.config['WTF_CSRF_ENABLED'] = False
 
 # Tests.
 def test_home_page():
-    request, response = app.test_client.get('/')
+    _, response = app.test_client.get('/')
     assert response.status == 200
 
-    request, response = app.test_client.get('/?items=10')
+    _, response = app.test_client.get('/?items=10')
     assert response.status == 200
 
-    request, response = app.test_client.get('/?items=20&search=t')
+    _, response = app.test_client.get('/?items=20&search=t')
     assert response.status == 200
 
 
 def test_courses_page():
-    request, response = app.test_client.get('/courses')
+    _, response = app.test_client.get('/courses')
     assert response.status == 200
 
 
 def test_user_page_get():
-    request, response = app.test_client.get('/user/')
+    _, response = app.test_client.get('/user/')
     assert response.status == 200
 
 
@@ -88,7 +88,7 @@ def test_user_page_post_create():
         'status': '1'
     }
     headers = {'content-type': 'application/x-www-form-urlencoded'}
-    request, response = app.test_client.post(
+    _, response = app.test_client.post(
         '/user/',
         data=urlencode(user_data),
         headers=headers,
@@ -119,7 +119,7 @@ def test_user_page_post_edit():
         'status': '0'
     }
     headers = {'content-type': 'application/x-www-form-urlencoded'}
-    request, response = app.test_client.post(
+    _, response = app.test_client.post(
         '/user/2',
         data=urlencode(user_data),
         headers=headers,
@@ -142,23 +142,23 @@ def test_user_page_post_edit():
 
 
 def test_user_page_delete():
-    request, response = app.test_client.get('/user/2')
+    _, response = app.test_client.get('/user/2')
     assert response.status == 200
 
     # Delete the user.
-    request, response = app.test_client.delete('/user/2')
+    _, response = app.test_client.delete('/user/2')
     assert response.status == 200
 
     # The user shouldn't exist.
-    request, response = app.test_client.get('/user/2')
+    _, response = app.test_client.get('/user/2')
     assert response.status == 404
 
 
 def test_user_page_1():
-    request, response = app.test_client.get('/user/1')
+    _, response = app.test_client.get('/user/1')
     assert response.status == 200
 
 
 def test_user_page_2():
-    request, response = app.test_client.get('/user/3')
+    _, response = app.test_client.get('/user/3')
     assert response.status == 404

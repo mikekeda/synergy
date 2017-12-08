@@ -1,3 +1,5 @@
+import re
+
 from sanic import Sanic
 from sanic.views import HTTPMethodView
 from sanic.response import html, json, redirect
@@ -6,7 +8,6 @@ from sanic_jinja2 import SanicJinja2
 from sanic_session import RedisSessionInterface
 import asyncio_redis
 from aiocache import caches
-import re
 
 from models import User, Course
 from forms import UserForm, UserEditForm

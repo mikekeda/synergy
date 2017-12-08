@@ -1,7 +1,8 @@
+import asyncio
+
 from peewee import (PostgresqlDatabase, Model, IntegrityError,
                     CharField, ForeignKeyField)
 from aiocache import caches
-import asyncio
 
 from settings import db_config, default_page, default_items_per_page
 
@@ -18,9 +19,9 @@ class BaseModel(Model):
     class Meta:
         database = database
 
-    def save(self, *args, **kwargs):
+    def save(self, force_insert=False, only=None):
         try:
-            rows = super().save(*args, **kwargs)
+            rows = super().save(force_insert=force_insert, only=only)
             # asynchronously delete class and object cache
             asyncio.ensure_future(type(self).clean_cache(self.id))
 
@@ -29,8 +30,9 @@ class BaseModel(Model):
             database.rollback()
             return
 
-    def delete_instance(self, *args, **kwargs):
-        counter = super().delete_instance(*args, **kwargs)
+    def delete_instance(self, recursive=False, delete_nullable=False):
+        counter = super().delete_instance(recursive=recursive,
+                                          delete_nullable=delete_nullable)
         # asynchronously delete class and object cache
         asyncio.ensure_future(type(self).clean_cache(self.id))
         return counter

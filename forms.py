@@ -22,14 +22,14 @@ class UserForm(SanicForm):
     phone = TelField('Phone', validators=[
         Optional(),
         Regexp(
-            '^\+?[0-9]{3}-?[0-9]{6,12}$',
+            '^\\+?[0-9]{3}-?[0-9]{6,12}$',
             message='Please enter a valid phone number!'
         ),
     ])
     mobile = TelField('Mobile phone', validators=[
         Optional(),
         Regexp(
-            '^\+?[0-9]{3}-?[0-9]{6,12}$',
+            '^\\+?[0-9]{3}-?[0-9]{6,12}$',
             message='Please enter a valid mobile number!'
         ),
     ])

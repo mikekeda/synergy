@@ -11,8 +11,12 @@ import re
 from models import User, Course
 from forms import UserForm, UserEditForm
 from template_tags import update_param
-from settings import redis_session_config, redis_cache_config
-from settings import default_page, default_items_per_page
+from settings import (
+    redis_session_config,
+    redis_cache_config,
+    default_page,
+    default_items_per_page
+)
 
 app = Sanic(__name__)
 app.config['SECRET_KEY'] = 'test secret'
@@ -60,7 +64,10 @@ async def add_session_to_request(request):
 async def save_session(request, response):
     # after each request save the session,
     # pass the response to set client cookies
-    await session_interface.save(request, response)
+    try:
+        await session_interface.save(request, response)
+    except RuntimeError:
+        pass
 
 # Serves files from the static folder to the URL /static
 app.static('/static', './static')
@@ -91,7 +98,10 @@ async def users_page(request):
     cache = caches.get('default')
     # todo: maybe not need use cache if there is search
     key = '_'.join(['users', str(page), str(items_per_page), search])
-    rendered_page = await cache.get(key)
+    try:
+        rendered_page = await cache.get(key)
+    except RuntimeError:
+        rendered_page = None
 
     if not rendered_page:
         if search:
@@ -112,7 +122,10 @@ async def users_page(request):
             search=search,
         )
         # set page cache
-        await cache.set(key, rendered_page)
+        try:
+            await cache.set(key, rendered_page)
+        except RuntimeError:
+            pass
     return html(rendered_page)
 
 
@@ -128,7 +141,10 @@ async def courses_page(request):
     # try to get page from the cache
     cache = caches.get('default')
     key = '_'.join(['courses', str(page), str(default_items_per_page)])
-    rendered_page = await cache.get(key)
+    try:
+        rendered_page = await cache.get(key)
+    except RuntimeError:
+        rendered_page = None
 
     if not rendered_page:
         courses = Course.select().paginate(page, default_items_per_page)
@@ -142,7 +158,10 @@ async def courses_page(request):
             current_page=page
         )
         # set page cache
-        await cache.set(key, rendered_page)
+        try:
+            await cache.set(key, rendered_page)
+        except RuntimeError:
+            pass
     return html(rendered_page)
 
 
@@ -201,14 +220,13 @@ class UserView(HTTPMethodView):
         """User deletion"""
         try:
             user = User.get(User.id == uid)
+            user.delete_instance(recursive=True)
+            return json({'message': 'User was deleted'})
         except User.DoesNotExist:
             abort(404)
-
-        user.delete_instance(recursive=True)
-
-        return json({'message': 'User was deleted'})
 
 
 app.add_route(UserView.as_view(), '/user/(<uid>?)')
 
-app.run(host="0.0.0.0", port=8080)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)

@@ -89,9 +89,13 @@ class BaseModel(Model):
     @classmethod
     async def get_from_cache(cls, obj_id):
         """Get object from cache"""
-        cache = caches.get('default')
+        try:
+            cache = caches.get('default')
+            obj = await cache.get('{}_{}'.format(cls.__name__.lower(), obj_id))
+        except RuntimeError:
+            obj = None
 
-        return await cache.get('{}_{}'.format(cls.__name__.lower(), obj_id))
+        return obj
 
 
 class User(BaseModel):
@@ -127,3 +131,6 @@ class UserCourse(BaseModel):
     """
     user = ForeignKeyField(User)
     course = ForeignKeyField(Course)
+
+
+MODELS = [User, Course, UserCourse]

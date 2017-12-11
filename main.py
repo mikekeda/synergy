@@ -166,6 +166,12 @@ async def courses_page(request):
     return html(rendered_page)
 
 
+@app.route("/about")
+async def about_page(request):
+    """About list"""
+    return html(jinja.render_string('about.html', request))
+
+
 class UserView(HTTPMethodView):
     async def get(self, request, uid=None):
         """User edit/create form"""

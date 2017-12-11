@@ -50,6 +50,11 @@ def test_courses_page():
     assert response.status == 200
 
 
+def test_about_page():
+    _, response = app.test_client.get('/about')
+    assert response.status == 200
+
+
 def test_user_page_get():
     _, response = app.test_client.get('/user/')
     assert response.status == 200

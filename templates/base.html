@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <!--Import Google Icon Font-->
     <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -24,6 +24,9 @@
           <li>
             <a href="/courses" class="{% if request.path == '/courses' %}active{% else %}grey-text{% endif %}">Courses</a>
           </li>
+          <li>
+            <a href="/about" class="{% if request.path == '/about' %}active{% else %}grey-text{% endif %}">About</a>
+          </li>
         </ul>
 
         <ul id="nav-mobile" class="side-nav">
@@ -32,6 +35,9 @@
           </li>
           <li>
             <a href="/courses" class="{% if request.path == '/courses' %}active{% else %}grey-text{% endif %}">Courses</a>
+          </li>
+          <li>
+            <a href="/about" class="{% if request.path == '/about' %}active{% else %}grey-text{% endif %}">About</a>
           </li>
         </ul>
         <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>

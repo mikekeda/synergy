@@ -28,7 +28,7 @@ class BaseModel(Model):
             return rows
         except IntegrityError:
             database.rollback()
-            return
+            return None
 
     def delete_instance(self, recursive=False, delete_nullable=False):
         counter = super().delete_instance(recursive=recursive,

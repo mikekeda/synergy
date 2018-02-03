@@ -11,8 +11,11 @@ from main import app
 from models import User, Course, MODELS
 
 
-for cls in MODELS:
+# Drop all tables.
+for cls in reversed(MODELS):
     cls.drop_table(fail_silently=True, cascade=True)
+# Create all tables.
+for cls in MODELS:
     cls.create_table(fail_silently=True)
 
 # Add test user.

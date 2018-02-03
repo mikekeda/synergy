@@ -71,6 +71,7 @@ async def save_session(request, response):
 
 # Serves files from the static folder to the URL /static
 app.static('/static', './static')
+cache = caches.get('default')
 
 
 @app.route("/")
@@ -94,12 +95,10 @@ async def users_page(request):
     # remove any other charset to prevent SQL injection
     search = re.sub('[^a-zA-Z]+', '', search)
 
-    # Try to get page from the cache.
-    cache = caches.get('default')
-    # TODO: maybe not need use cache if there is search
-    key = '_'.join(['users', str(page), str(items_per_page), search])
+    # Try to get page from the cache (if it's not search result).
+    key = '_'.join(['users', str(page), str(items_per_page)])
     try:
-        rendered_page = await cache.get(key)
+        rendered_page = await cache.get(key) if not search else None
     except RuntimeError:
         rendered_page = None
 
@@ -121,11 +120,12 @@ async def users_page(request):
             items_per_page=items_per_page,
             search=search,
         )
-        # Set page cache.
-        try:
-            await cache.set(key, rendered_page)
-        except RuntimeError:
-            pass
+        # Set page cache (no need to set search results).
+        if not search:
+            try:
+                await cache.set(key, rendered_page)
+            except RuntimeError:
+                pass
     return html(rendered_page)
 
 
@@ -139,7 +139,6 @@ async def courses_page(request):
         page = default_page
 
     # Try to get page from the cache.
-    cache = caches.get('default')
     key = '_'.join(['courses', str(page), str(default_items_per_page)])
     try:
         rendered_page = await cache.get(key)

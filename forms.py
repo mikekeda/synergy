@@ -71,13 +71,12 @@ class UserEditForm(UserForm):
                 self.courses.data.append(str(user_course.course_id))
 
     def save(self, *args, **kwargs):
+        """ Form save. """
         user = kwargs.get('obj')
         if user:
-            # TODO: Improve this (try to use props).
-            user.email = self.email.data
-            user.phone = self.phone.data
-            user.mobile = self.mobile.data
-            user.status = self.status.data
+            for prop in type(user).props():
+                if prop != 'name':  # name can't be changed.
+                    setattr(user, prop, getattr(self, prop).data)
             user.save()
 
             UserCourse.delete().where(UserCourse.user_id == user.id).execute()

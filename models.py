@@ -13,6 +13,8 @@ STATUSES = (
     ('1', 'Active'),
 )
 
+cache = caches.get('default')
+
 
 class BaseModel(Model):
     """ Base class with common methods. """
@@ -48,7 +50,6 @@ class BaseModel(Model):
     @classmethod
     async def clean_cache(cls, obj_id=None):
         """ Delete cache keys those are related to the class and obj_id. """
-        cache = caches.get('default')
         class_name = cls.__name__.lower()
 
         # Probably user will be redirected to page which is using this cache,
@@ -81,8 +82,6 @@ class BaseModel(Model):
     @classmethod
     async def _set_cache(cls, obj):
         """ Save object to cache. """
-        cache = caches.get('default')
-
         return await cache.set(
             '{}_{}'.format(cls.__name__.lower(), obj.id),
             obj
@@ -92,7 +91,6 @@ class BaseModel(Model):
     async def get_from_cache(cls, obj_id):
         """ Get object from cache. """
         try:
-            cache = caches.get('default')
             obj = await cache.get('{}_{}'.format(cls.__name__.lower(), obj_id))
         except RuntimeError:
             obj = None

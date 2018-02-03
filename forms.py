@@ -7,7 +7,7 @@ from models import User, Course, UserCourse, STATUSES
 
 
 class UserForm(SanicForm):
-    """User create form"""
+    """ User create form. """
     name = StringField('Name', validators=[
         DataRequired(),
         Regexp(
@@ -47,20 +47,20 @@ class UserForm(SanicForm):
 
 
 class UserEditForm(UserForm):
-    """User edit form"""
+    """ User edit form. """
     courses = SelectMultipleField('Courses')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # list of courses
+        # List of courses.
         courses = Course.select()
         self.courses.choices = [('', '-- select courses --')]
         self.courses.choices.extend(
             [(str(course.id), course.name) for course in courses]
         )
 
-        # user's courses
+        # User's courses.
         user = kwargs.get('obj')
         if user:
             user_courses = UserCourse.select(UserCourse.course_id).where(
@@ -73,7 +73,7 @@ class UserEditForm(UserForm):
     def save(self, *args, **kwargs):
         user = kwargs.get('obj')
         if user:
-            # todo: Improve this (try to use props).
+            # TODO: Improve this (try to use props).
             user.email = self.email.data
             user.phone = self.phone.data
             user.mobile = self.mobile.data

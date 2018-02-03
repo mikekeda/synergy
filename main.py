@@ -44,7 +44,7 @@ class Redis:
 
 redis = Redis()
 
-# pass the getter method for the connection pool into the session
+# Pass the getter method for the connection pool into the session.
 session_interface = RedisSessionInterface(redis.get_redis_pool)
 
 
@@ -56,15 +56,14 @@ def init_cache(sanic, loop):
 
 @app.middleware('request')
 async def add_session_to_request(request):
-    # before each request initialize a session
-    # using the client's request
+    # Before each request initialize a session using the client's request.
     await session_interface.open(request)
 
 
 @app.middleware('response')
 async def save_session(request, response):
-    # after each request save the session,
-    # pass the response to set client cookies
+    # After each request save the session,
+    # pass the response to set client cookies.
     try:
         await session_interface.save(request, response)
     except RuntimeError:
@@ -76,28 +75,28 @@ app.static('/static', './static')
 
 @app.route("/")
 async def users_page(request):
-    """Users list"""
-    # get current page, convert to int to prevent SQL injection
+    """ Users list. """
+    # Get current page, convert to int to prevent SQL injection.
     try:
         page = int(request.args.get('page', default_page))
     except ValueError:
         page = default_page
 
-    # get amount of items for page, convert to int to prevent SQL injection
+    # Get amount of items for page, convert to int to prevent SQL injection.
     try:
         items_per_page = int(request.args.get('items', default_items_per_page))
     except ValueError:
         items_per_page = default_items_per_page
 
-    # get search string
+    # Get search string.
     search = request.args.get('search', '')
-    # for user name only letters are allowed
+    # For user name only letters are allowed,
     # remove any other charset to prevent SQL injection
     search = re.sub('[^a-zA-Z]+', '', search)
 
-    # try to get page from the cache
+    # Try to get page from the cache.
     cache = caches.get('default')
-    # todo: maybe not need use cache if there is search
+    # TODO: maybe not need use cache if there is search
     key = '_'.join(['users', str(page), str(items_per_page), search])
     try:
         rendered_page = await cache.get(key)
@@ -122,7 +121,7 @@ async def users_page(request):
             items_per_page=items_per_page,
             search=search,
         )
-        # set page cache
+        # Set page cache.
         try:
             await cache.set(key, rendered_page)
         except RuntimeError:
@@ -132,14 +131,14 @@ async def users_page(request):
 
 @app.route("/courses")
 async def courses_page(request):
-    """Courses list"""
-    # get current page
+    """ Courses list. """
+    # Get current page.
     try:
         page = int(request.args.get('page', default_page))
     except ValueError:
         page = default_page
 
-    # try to get page from the cache
+    # Try to get page from the cache.
     cache = caches.get('default')
     key = '_'.join(['courses', str(page), str(default_items_per_page)])
     try:
@@ -158,7 +157,7 @@ async def courses_page(request):
             pages=pages,
             current_page=page
         )
-        # set page cache
+        # Set page cache.
         try:
             await cache.set(key, rendered_page)
         except RuntimeError:
@@ -168,13 +167,13 @@ async def courses_page(request):
 
 @app.route("/about")
 async def about_page(request):
-    """About list"""
+    """ About page. """
     return html(jinja.render_string('about.html', request))
 
 
 class UserView(HTTPMethodView):
     async def get(self, request, uid=None):
-        """User edit/create form"""
+        """ User edit/create form. """
         if uid:
             user = await User.get_from_cache(uid)
             if not user:
@@ -194,8 +193,8 @@ class UserView(HTTPMethodView):
         )
 
     async def post(self, request, uid=None):
-        """Submit for User edit/create form"""
-        # todo: impalement ajax form submit
+        """ Submit for User edit/create form. """
+        # TODO: Impalement ajax form submit
         form = UserEditForm(request) if uid else UserForm(request)
 
         if form.validate():
@@ -224,7 +223,7 @@ class UserView(HTTPMethodView):
         )
 
     async def delete(self, request, uid):
-        """User deletion"""
+        """ User deletion. """
         try:
             user = User.get(User.id == uid)
             user.delete_instance(recursive=True)

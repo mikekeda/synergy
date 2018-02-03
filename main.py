@@ -111,7 +111,7 @@ async def users_page(request):
             ).paginate(page, items_per_page)
         else:
             users = User.select().paginate(page, items_per_page)
-        pages = (User.select().count() - 1) // items_per_page + 1
+        pages = (User.select().count(None) - 1) // items_per_page + 1
 
         rendered_page = jinja.render_string(
             'users.html',
@@ -149,7 +149,7 @@ async def courses_page(request):
 
     if not rendered_page:
         courses = Course.select().paginate(page, default_items_per_page)
-        pages = (Course.select().count() - 1) // default_items_per_page + 1
+        pages = (Course.select().count(None) - 1) // default_items_per_page + 1
 
         rendered_page = jinja.render_string(
             'courses.html',

@@ -2,7 +2,7 @@
 """
     Gunicorn config..
 """
-bind = 'unix:/uwsgi/airtickets.sock'
+bind = 'unix:/uwsgi/synergy.sock'
 workers = 1
 timeout = 30
 max_requests = 100

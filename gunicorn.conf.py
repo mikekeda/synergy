@@ -2,6 +2,7 @@
 """
     Gunicorn config.
 """
+worker_class = 'sanic.worker.GunicornWorker'
 bind = 'unix:/uwsgi/synergy.sock'
 workers = 1
 timeout = 30

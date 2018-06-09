@@ -4,7 +4,8 @@ from peewee import (PostgresqlDatabase, Model, IntegrityError,
                     CharField, ForeignKeyField)
 from aiocache import caches
 
-from settings import db_config, default_page, default_items_per_page
+from settings import (db_config, default_page, default_items_per_page,
+                      redis_cache_config)
 
 database = PostgresqlDatabase(**db_config)
 
@@ -13,6 +14,7 @@ STATUSES = (
     ('1', 'Active'),
 )
 
+caches.set_config(redis_cache_config)
 cache = caches.get('default')
 
 

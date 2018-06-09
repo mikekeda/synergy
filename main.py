@@ -173,7 +173,9 @@ async def about_page(request):
 class UserView(HTTPMethodView):
     async def get(self, request, uid=None):
         """ User edit/create form. """
-        if uid:
+        existing_user = uid and uid.isdigit()
+        if existing_user:
+            uid = int(uid)
             user = await User.get_from_cache(uid)
             if not user:
                 try:
@@ -188,7 +190,7 @@ class UserView(HTTPMethodView):
             'user-form.html',
             request,
             form=form,
-            new=uid == ''
+            new=not existing_user
         )
 
     async def post(self, request, uid=None):

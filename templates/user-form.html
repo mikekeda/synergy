@@ -15,7 +15,7 @@
           {% for field in form %}
             <div class="input-field col s12">
               {% if field.name != 'csrf_token' and field.type != 'SelectField' and field.type != 'SelectMultipleField' %}
-                <input id="{{ field.name }}" {% if not new and field.name == 'name' %}readonly{% endif %} name="{{ field.name }}" type="{{ field.widget.input_type }}" value="{{ field.data|default('', True) }}" class="validate{% if field.errors %} invalid{% endif %}">
+                <input id="{{ field.name }}" {% if not new and field.name == 'name' %}readonly{% endif %} name="{{ field.name }}" type="{{ field.widget.input_type }}" value="{{ field.data|default('', True)|e }}" class="validate{% if field.errors %} invalid{% endif %}">
                 <label for="{{ field.name }}" {% if field.errors %} data-error="{{ field.errors|join('. ') }}"{% endif %}{% if field.flags.required %} class="required"{% endif %}>{{ field.label.text }}</label>
               {% else %}
                 {{ field }}

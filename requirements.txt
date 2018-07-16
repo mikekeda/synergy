@@ -3,9 +3,9 @@ aiofiles==0.3.2
 aiohttp==3.3.2
 aiomcache==0.6.0
 aioredis==1.1.0
-astroid==1.6.5
+astroid==2.0
 async-timeout==3.0.0
-asyncio-redis==0.14.3
+-e git://github.com/jonathanslenders/asyncio-redis.git#egg=asyncio-redis
 atomicwrites==1.1.5
 attrs==18.1.0
 certifi==2018.4.16
@@ -31,7 +31,7 @@ psycopg2-binary==2.7.5
 py==1.5.4
 pycodestyle==2.4.0
 pyflakes==2.0.0
-pylint==1.9.2
+pylint==2.0.0
 pytest==3.6.3
 pytest-cov==2.5.1
 requests==2.19.1

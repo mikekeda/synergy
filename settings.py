@@ -39,7 +39,7 @@ redis_cache_config = {
     'default': {
         'cache': 'aiocache.RedisCache',
         'endpoint': 'localhost',
-        'db': 4,
+        'db': 7,
         'timeout': 2,
         'serializer': {
             'class': 'aiocache.serializers.PickleSerializer'
@@ -50,6 +50,6 @@ redis_cache_config = {
 redis_session_config = {
     'host': 'localhost',
     'port': 6379,
-    'db': 4,
+    'db': 7,
     'poolsize': 10
 }

@@ -21,6 +21,10 @@ from settings import (
 
 app = Sanic(__name__)
 app.config['SECRET_KEY'] = 'test secret'
+
+# Set jinja_env and session_interface to None to avoid code style warning.
+app.jinja_env = None
+
 jinja = SanicJinja2(app)
 
 app.jinja_env.globals.update(update_param=update_param)
@@ -171,10 +175,9 @@ async def about_page(request):
 
 
 class UserView(HTTPMethodView):
-    async def get(self, request, uid=None):
+    async def get(self, request, uid: int = None):
         """ User edit/create form. """
-        existing_user = uid and uid.isdigit()
-        if existing_user:
+        if uid:
             uid = int(uid)
             user = await User.get_from_cache(uid)
             if not user:
@@ -190,10 +193,10 @@ class UserView(HTTPMethodView):
             'user-form.html',
             request,
             form=form,
-            new=not existing_user
+            new=not uid
         )
 
-    async def post(self, request, uid=None):
+    async def post(self, request, uid: int = None):
         """ Submit for User edit/create form. """
         # TODO: Impalement ajax form submit
         form = UserEditForm(request) if uid else UserForm(request)
@@ -223,7 +226,7 @@ class UserView(HTTPMethodView):
             new=uid == ''
         )
 
-    async def delete(self, request, uid):
+    async def delete(self, request, uid: int):
         """ User deletion. """
         try:
             user = User.get(User.id == uid)
@@ -233,7 +236,8 @@ class UserView(HTTPMethodView):
             abort(404)
 
 
-app.add_route(UserView.as_view(), '/user/(<uid>?)')
+app.add_route(UserView.as_view(), '/user/')
+app.add_route(UserView.as_view(), '/user/<uid:int>')
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)

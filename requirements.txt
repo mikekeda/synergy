@@ -5,7 +5,7 @@ aiomcache==0.6.0
 aioredis==1.1.0
 astroid==2.0.2
 async-timeout==3.0.0
--e git://github.com/jonathanslenders/asyncio-redis.git#egg=asyncio-redis
+asyncio-redis==0.15.1
 atomicwrites==1.1.5
 attrs==18.1.0
 certifi==2018.4.16

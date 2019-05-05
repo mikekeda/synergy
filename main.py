@@ -54,7 +54,7 @@ session_interface = RedisSessionInterface(redis.get_redis_pool)
 
 # Initialize Redis cache
 @app.listener('before_server_start')
-def init_cache(sanic, loop):
+def init_cache(_, __):
     caches.set_config(redis_cache_config)
 
 
@@ -175,6 +175,8 @@ async def about_page(request):
 
 
 class UserView(HTTPMethodView):
+
+    # noinspection PyMethodMayBeStatic
     async def get(self, request, uid: int = None):
         """ User edit/create form. """
         if uid:
@@ -196,6 +198,7 @@ class UserView(HTTPMethodView):
             new=not uid
         )
 
+    # noinspection PyMethodMayBeStatic
     async def post(self, request, uid: int = None):
         """ Submit for User edit/create form. """
         # TODO: Impalement ajax form submit
@@ -226,7 +229,8 @@ class UserView(HTTPMethodView):
             new=uid == ''
         )
 
-    async def delete(self, request, uid: int):
+    # noinspection PyMethodMayBeStatic
+    async def delete(self, _, uid: int):
         """ User deletion. """
         try:
             user = User.get(User.id == uid)

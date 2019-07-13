@@ -21,7 +21,7 @@ DB_URL = "asyncpg://{}:{}@{}:5432/{}".format(
 async def setup():
     """ Create test databases and tables before tests run and drop them after. """
 
-    await db.set_bind(DB_URL, echo=True)
+    await db.set_bind(DB_URL)
 
     await db.gino.drop_all()
     await db.gino.create_all()

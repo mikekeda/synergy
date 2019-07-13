@@ -28,13 +28,6 @@ def get_env_var(name, default=''):
 default_page = 1
 default_items_per_page = 15
 
-db_config = {
-    'user': get_env_var('DB_USER', 'user_admin'),
-    'password': get_env_var('DB_PASSWORD', 'user_admin_pasS64!'),
-    'host': get_env_var('DB_HOST', '127.0.0.1'),
-    'database': get_env_var('DB_NAME', 'users')
-}
-
 redis_cache_config = {
     'default': {
         'cache': 'aiocache.RedisCache',
@@ -45,11 +38,4 @@ redis_cache_config = {
             'class': 'aiocache.serializers.PickleSerializer'
         }
     }
-}
-
-redis_session_config = {
-    'host': 'localhost',
-    'port': 6379,
-    'db': 7,
-    'poolsize': 10
 }

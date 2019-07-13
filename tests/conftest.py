@@ -13,7 +13,7 @@ DB_URL = "asyncpg://{}:{}@{}:5432/{}".format(
     get_env_var('DB_USER', 'user_admin'),
     get_env_var('DB_PASSWORD', 'user_admin_pasS64!'),
     get_env_var('DB_HOST', '127.0.0.1'),
-    'test_users'
+    get_env_var('DB_NAME', 'test_users')
 )
 
 

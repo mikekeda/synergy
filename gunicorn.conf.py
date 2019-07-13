@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 """
-    Gunicorn config.
+Gunicorn config.
 """
 worker_class = 'sanic.worker.GunicornWorker'
 bind = 'unix:/uwsgi/synergy.sock'

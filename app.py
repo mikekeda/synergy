@@ -15,6 +15,7 @@ from gino.ext.sanic import Gino
 
 app = Sanic(__name__)
 app.config['SECRET_KEY'] = 'test secret'
+app.config['DB_USE_CONNECTION_FOR_REQUEST'] = False
 app.config['DB_USER'] = get_env_var('DB_USER', 'user_admin')
 app.config['DB_PASSWORD'] = get_env_var('DB_PASSWORD', 'user_admin_pasS64!')
 app.config['DB_HOST'] = get_env_var('DB_HOST', '127.0.0.1')

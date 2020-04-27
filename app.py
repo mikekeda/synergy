@@ -1,17 +1,19 @@
+from collections import namedtuple
 import traceback
 
+from aiocache import caches
 import aioredis
+from gino import Gino
 from sanic import Sanic
 from sanic_jinja2 import SanicJinja2
 from sanic_session import Session, AIORedisSessionInterface
-from aiocache import caches
+from sqlalchemy.engine.url import URL
 
 from template_tags import update_param
 from settings import (
     redis_cache_config,
     get_env_var,
 )
-from gino.ext.sanic import Gino
 
 app = Sanic(__name__)
 app.config['SECRET_KEY'] = 'test secret'
@@ -22,10 +24,9 @@ app.config['DB_HOST'] = get_env_var('DB_HOST', '127.0.0.1')
 app.config['DB_DATABASE'] = get_env_var('DB_NAME', 'users')
 app.config['redis'] = 'redis://127.0.0.1/7'
 db = Gino()
-db.init_app(app)
 
 # Set jinja_env and session_interface to None to avoid code style warning.
-app.jinja_env = None
+app.jinja_env = namedtuple('JinjaEnv', ['globals'])({})
 
 jinja = SanicJinja2(app)
 
@@ -38,7 +39,29 @@ session = Session()
 
 # Initialize Redis cache
 @app.listener('before_server_start')
-async def init_cache(_, __):
+async def init_cache(_app, loop):
+    if _app.config.get("DB_DSN"):
+        dsn = app.config.DB_DSN
+    else:
+        dsn = URL(
+            drivername=_app.config.setdefault("DB_DRIVER", "asyncpg"),
+            host=_app.config.setdefault("DB_HOST", "localhost"),
+            port=_app.config.setdefault("DB_PORT", 5432),
+            username=_app.config.setdefault("DB_USER", "postgres"),
+            password=_app.config.setdefault("DB_PASSWORD", ""),
+            database=_app.config.setdefault("DB_DATABASE", "postgres"),
+        )
+
+    await db.set_bind(
+        dsn,
+        echo=_app.config.setdefault("DB_ECHO", False),
+        min_size=_app.config.setdefault("DB_POOL_MIN_SIZE", 5),
+        max_size=_app.config.setdefault("DB_POOL_MAX_SIZE", 10),
+        ssl=_app.config.setdefault("DB_SSL"),
+        loop=loop,
+        **_app.config.setdefault("DB_KWARGS", dict()),
+    )
+
     caches.set_config(redis_cache_config)
     app.redis = await aioredis.create_redis_pool(app.config['redis'])
     # init extensions fabrics
@@ -46,9 +69,30 @@ async def init_cache(_, __):
 
 
 @app.listener('after_server_stop')
-async def after_server_stop(_, __):
+async def after_server_stop(_app, __):
     """ Close all db connection on server stop. """
-    app.redis.close()
+    await db.pop_bind().close()
+    _app.redis.close()
+    await _app.redis.wait_closed()
+
+
+@app.middleware("request")
+async def on_request(request):
+    conn = await db.acquire(lazy=True)
+    if hasattr(request, "ctx"):
+        request.ctx.connection = conn
+    else:
+        request["connection"] = conn
+
+
+@app.middleware("response")
+async def on_response(request, _):
+    if hasattr(request, "ctx"):
+        conn = getattr(request.ctx, "connection", None)
+    else:
+        conn = request.pop("connection", None)
+    if conn is not None:
+        await conn.release()
 
 
 @app.exception(Exception)

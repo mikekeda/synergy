@@ -1,4 +1,5 @@
 import re
+import socket
 
 from sanic.exceptions import abort
 from sanic.response import html, json, redirect
@@ -151,4 +152,9 @@ app.add_route(UserView.as_view(), '/user/<uid:int>')
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    if app.config['DEBUG']:
+        app.run(host="0.0.0.0", port=8000, debug=True)
+    else:
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        sock.bind('/uwsgi/synergy.sock')
+        app.run(sock=sock, access_log=False)

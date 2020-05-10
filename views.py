@@ -2,6 +2,7 @@ import re
 import socket
 
 from sanic.exceptions import abort
+from sanic.log import logger
 from sanic.response import html, json, redirect
 from sanic.views import HTTPMethodView
 
@@ -159,5 +160,5 @@ if __name__ == "__main__":
             try:
                 sock.bind('/uwsgi/synergy.sock')
                 app.run(sock=sock, access_log=False)
-            except OSError:
-                pass
+            except OSError as e:
+                logger.warning(e)

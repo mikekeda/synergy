@@ -10,14 +10,12 @@ from sanic_session import Session, AIORedisSessionInterface
 from sqlalchemy.engine.url import URL
 
 from template_tags import update_param
-from settings import (
-    redis_cache_config,
-    get_env_var,
-)
+from settings import redis_cache_config, get_env_var
 
 app = Sanic(__name__)
 app.config['DEBUG'] = bool(get_env_var('DEBUG', 'True'))
-app.config['SECRET_KEY'] = 'test secret'
+app.config['SOCKET_FILE'] = get_env_var('SOCKET_FILE', '/temp/synergy.sock')
+app.config['SECRET_KEY'] = get_env_var('SECRET_KEY', 'test secret')
 app.config['DB_USE_CONNECTION_FOR_REQUEST'] = False
 app.config['DB_USER'] = get_env_var('DB_USER', 'user_admin')
 app.config['DB_PASSWORD'] = get_env_var('DB_PASSWORD', 'user_admin_pasS64!')
@@ -38,9 +36,9 @@ app.redis = None
 session = Session()
 
 
-# Initialize Redis cache
 @app.listener('before_server_start')
-async def init_cache(_app, loop):
+async def before_server_start(_app, loop):
+    """ Initialize database connection and Redis cache. """
     if _app.config.get("DB_DSN"):
         dsn = app.config.DB_DSN
     else:

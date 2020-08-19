@@ -78,7 +78,7 @@ $(document).ready(function() {
   // Search given string in user names.
   $('.user-search label').click(searchUser);
   $('.user-search input').keypress(function(e) {
-    if (e.which == 13) {
+    if (e.which === 13) {
       searchUser(e, this.value);
     }
   });

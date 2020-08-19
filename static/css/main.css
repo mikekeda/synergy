@@ -1,26 +1,26 @@
 .no-padding {
-  padding: 0!important;
+  padding: 0 !important;
 }
 
 .no-margin {
-  margin: 0!important;
+  margin: 0 !important;
 }
 
 .no-br-radius {
-  border-radius: 0!important;
+  border-radius: 0 !important;
 }
 
 .d-inline-block {
-  display: inline-block!important;
+  display: inline-block !important;
 }
 
 .text-uppercase {
-  text-transform: uppercase!important;
+  text-transform: uppercase !important;
 }
 
-.required:before {
+.required::before {
   color: red;
-  content:"* ";
+  content: "* ";
 }
 
 .invalid {
@@ -32,12 +32,13 @@
 }
 
 .my-5 {
-  margin-bottom: 3rem!important;
-  margin-top: 3rem!important;
+  margin-bottom: 3rem !important;
+  margin-top: 3rem !important;
 }
+
 .my-6 {
-  margin-bottom: 3.6rem!important;
-  margin-top: 3.6rem!important;
+  margin-bottom: 3.6rem !important;
+  margin-top: 3.6rem !important;
 }
 
 body > .container {
@@ -51,14 +52,16 @@ body > .container {
 .user-search label {
   cursor: pointer;
 }
+
 .user-search input[type=search] ~ .material-icons {
-	top: 10px;
+  top: 10px;
 }
 
 .table-list td,
 .table-list th {
   padding: 15px;
 }
+
 .actions-tr {
   width: 120px;
 }

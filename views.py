@@ -95,7 +95,7 @@ class UserView(HTTPMethodView):
             if not user:
                 abort(404)
 
-            courses = await Course.query.where(User.id == uid).gino.all()
+            courses = await Course.query.gino.all()
             user_courses = await UserCourse.query.where(UserCourse.user_id == uid).gino.all()
 
             form = UserEditForm(request, obj=user, courses=courses, user_courses=user_courses)
@@ -113,7 +113,7 @@ class UserView(HTTPMethodView):
     async def post(self, request, uid: int = None):
         """ Submit for User edit/create form. """
         # TODO: Impalement ajax form submit
-        courses = await Course.query.where(User.id == uid).gino.all()
+        courses = await Course.query.gino.all()
         form = UserEditForm(request, courses=courses) if uid else UserForm(request)
 
         if form.validate():

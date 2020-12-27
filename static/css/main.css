@@ -1,21 +1,17 @@
-.no-padding {
-  padding: 0 !important;
-}
-
 .no-margin {
   margin: 0 !important;
 }
 
 .no-br-radius {
-  border-radius: 0 !important;
+  border-radius: 0;
 }
 
 .d-inline-block {
-  display: inline-block !important;
+  display: inline-block;
 }
 
 .text-uppercase {
-  text-transform: uppercase !important;
+  text-transform: uppercase;
 }
 
 .required::before {
@@ -32,13 +28,13 @@
 }
 
 .my-5 {
-  margin-bottom: 3rem !important;
-  margin-top: 3rem !important;
+  margin-bottom: 3rem;
+  margin-top: 3rem;
 }
 
 .my-6 {
-  margin-bottom: 3.6rem !important;
-  margin-top: 3.6rem !important;
+  margin-bottom: 3.6rem;
+  margin-top: 3.6rem;
 }
 
 body > .container {

@@ -1,10 +1,10 @@
 from collections import namedtuple
-import traceback
 
 from aiocache import caches
 import aioredis
 from gino import Gino
 from sanic import Sanic
+from sanic.log import logger
 from sanic_jinja2 import SanicJinja2
 from sanic_session import Session, AIORedisSessionInterface
 from sqlalchemy.engine.url import URL
@@ -13,19 +13,19 @@ from template_tags import update_param
 from settings import redis_cache_config, get_env_var
 
 app = Sanic(__name__)
-app.config['DEBUG'] = bool(get_env_var('DEBUG', 'True'))
-app.config['SOCKET_FILE'] = get_env_var('SOCKET_FILE', '/temp/synergy.sock')
-app.config['SECRET_KEY'] = get_env_var('SECRET_KEY', 'test secret')
-app.config['DB_USE_CONNECTION_FOR_REQUEST'] = False
-app.config['DB_USER'] = get_env_var('DB_USER', 'user_admin')
-app.config['DB_PASSWORD'] = get_env_var('DB_PASSWORD', 'user_admin_pasS64!')
-app.config['DB_HOST'] = get_env_var('DB_HOST', '127.0.0.1')
-app.config['DB_DATABASE'] = get_env_var('DB_NAME', 'users')
-app.config['redis'] = 'redis://127.0.0.1/7'
+app.config["DEBUG"] = bool(get_env_var("DEBUG", "True"))
+app.config["SOCKET_FILE"] = get_env_var("SOCKET_FILE", "/temp/synergy.sock")
+app.config["SECRET_KEY"] = get_env_var("SECRET_KEY", "test secret")
+app.config["DB_USE_CONNECTION_FOR_REQUEST"] = False
+app.config["DB_USER"] = get_env_var("DB_USER", "user_admin")
+app.config["DB_PASSWORD"] = get_env_var("DB_PASSWORD", "user_admin_pasS64!")
+app.config["DB_HOST"] = get_env_var("DB_HOST", "127.0.0.1")
+app.config["DB_DATABASE"] = get_env_var("DB_NAME", "users")
+app.config["redis"] = "redis://127.0.0.1/7"
 db = Gino()
 
 # Set jinja_env and session_interface to None to avoid code style warning.
-app.jinja_env = namedtuple('JinjaEnv', ['globals'])({})
+app.jinja_env = namedtuple("JinjaEnv", ["globals"])({})
 
 jinja = SanicJinja2(app)
 
@@ -36,7 +36,7 @@ app.redis = None
 session = Session()
 
 
-@app.listener('before_server_start')
+@app.listener("before_server_start")
 async def before_server_start(_app, loop):
     """ Initialize database connection and Redis cache. """
     if _app.config.get("DB_DSN"):
@@ -62,12 +62,12 @@ async def before_server_start(_app, loop):
     )
 
     caches.set_config(redis_cache_config)
-    app.redis = await aioredis.create_redis_pool(app.config['redis'])
+    app.redis = await aioredis.create_redis_pool(app.config["redis"])
     # init extensions fabrics
     session.init_app(app, interface=AIORedisSessionInterface(app.redis))
 
 
-@app.listener('after_server_stop')
+@app.listener("after_server_stop")
 async def after_server_stop(_app, __):
     """ Close all db connection on server stop. """
     await db.pop_bind().close()
@@ -96,21 +96,21 @@ async def on_response(request, _):
 
 @app.exception(Exception)
 async def exception_handler(request, exception: Exception, **__):
-    """ Exception handler returns error in json format. """
+    """Exception handler returns error in json format."""
     status_code = getattr(exception, "status_code", 500)
 
     if status_code == 500:
-        print("\n".join([str(exception.args), traceback.format_exc()]))
+        logger.exception(exception)
 
     return jinja.render(
-        'error.html',
+        "error.html",
         request,
         status=status_code,
         status_code=status_code,
-        message=''.join(exception.args)
+        message=" ".join(str(arg) for arg in exception.args),
     )
 
 
 # Serves files from the static folder to the URL /static
-app.static('/static', './static')
-cache = caches.get('default')
+app.static("/static", "./static")
+cache = caches.get("default")

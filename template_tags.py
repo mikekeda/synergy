@@ -10,6 +10,6 @@ def update_param(request, param, value=None):
         params.pop(param, None)
 
     if params:
-        path += '?' + urlencode(params)
+        path += "?" + urlencode(params)
 
     return path

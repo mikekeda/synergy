@@ -27,7 +27,7 @@ db = Gino()
 # Set jinja_env and session_interface to None to avoid code style warning.
 app.jinja_env = namedtuple("JinjaEnv", ["globals"])({})
 
-jinja = SanicJinja2(app)
+jinja = SanicJinja2(app, autoescape=True)
 
 app.jinja_env.globals.update(update_param=update_param)
 
@@ -40,7 +40,7 @@ session = Session()
 async def before_server_start(_app, loop):
     """ Initialize database connection and Redis cache. """
     if _app.config.get("DB_DSN"):
-        dsn = app.config.DB_DSN
+        dsn = _app.config.DB_DSN
     else:
         dsn = URL(
             drivername=_app.config.setdefault("DB_DRIVER", "asyncpg"),
@@ -62,9 +62,16 @@ async def before_server_start(_app, loop):
     )
 
     caches.set_config(redis_cache_config)
-    app.redis = await aioredis.create_redis_pool(app.config["redis"])
+    _app.redis = await aioredis.create_redis_pool(_app.config["redis"])
     # init extensions fabrics
-    session.init_app(app, interface=AIORedisSessionInterface(app.redis))
+    session.init_app(
+        _app,
+        interface=AIORedisSessionInterface(
+            _app.redis,
+            samesite="Strict",
+            cookie_name="__Host-session"
+        ),
+    )
 
 
 @app.listener("after_server_stop")

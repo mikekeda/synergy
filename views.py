@@ -4,7 +4,7 @@ import socket
 
 from sanic.exceptions import abort
 from sanic.log import logger
-from sanic.response import html, json, redirect
+from sanic.response import json, redirect
 from sanic.views import HTTPMethodView
 
 from settings import default_page, default_items_per_page
@@ -45,7 +45,7 @@ async def users_page(request):
 
     pages = ((await db.func.count(User.id).gino.scalar()) - 1) // items_per_page + 1
 
-    rendered_page = jinja.render_string(
+    return await jinja.render_async(
         "users.html",
         request,
         users=users,
@@ -54,8 +54,6 @@ async def users_page(request):
         items_per_page=items_per_page,
         search=search,
     )
-
-    return html(rendered_page)
 
 
 @app.route("/courses")
@@ -76,17 +74,15 @@ async def courses_page(request):
         (await db.func.count(Course.id).gino.scalar()) - 1
     ) // default_items_per_page + 1
 
-    rendered_page = jinja.render_string(
+    return await jinja.render_async(
         "courses.html", request, courses=courses, pages=pages, current_page=page
     )
-
-    return html(rendered_page)
 
 
 @app.route("/about")
 async def about_page(request):
     """ About page. """
-    return html(jinja.render_string("about.html", request))
+    return await jinja.render_async("about.html", request)
 
 
 class UserView(HTTPMethodView):
@@ -110,7 +106,9 @@ class UserView(HTTPMethodView):
         else:
             form = UserForm(request)
 
-        return jinja.render("user-form.html", request, form=form, new=not uid)
+        return await jinja.render_async(
+            "user-form.html", request, form=form, new=not uid
+        )
 
     # noinspection PyMethodMayBeStatic
     async def post(self, request, uid: int = None):
@@ -135,7 +133,9 @@ class UserView(HTTPMethodView):
                 else:
                     form.name.errors.append("This username already taken!")
 
-        return jinja.render("user-form.html", request, form=form, new=uid == "")
+        return await jinja.render_async(
+            "user-form.html", request, form=form, new=uid == ""
+        )
 
     # noinspection PyMethodMayBeStatic
     async def delete(self, _, uid: int):

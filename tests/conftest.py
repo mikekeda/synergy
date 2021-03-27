@@ -29,6 +29,7 @@ async def setup():
     # Add test user.
     await User.create(name="test_user_1", email="test@test.com")
 
+    # Add test courses.
     await Course.create(code="P012345", name="Python-Base")
     await Course.create(code="P234567", name="Python-Database")
     await Course.create(code="H345678", name="HTML")

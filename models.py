@@ -37,5 +37,5 @@ class UserCourse(db.Model):
     __tablename__ = "usercourse"
 
     id = db.Column(db.Integer(), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-    course_id = db.Column(db.Integer, db.ForeignKey("course.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"))
+    course_id = db.Column(db.Integer, db.ForeignKey("course.id", ondelete="CASCADE"))

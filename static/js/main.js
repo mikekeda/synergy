@@ -55,10 +55,10 @@ $(document).ready(function() {
       $.ajax({
         url: "/user/" + uid,
         type: "DELETE",
-        success: function(result) {
+        success() {
           $userRow.remove();
         },
-        error: function(result) {
+        error() {
           $userRow.fadeIn();
         }
       });

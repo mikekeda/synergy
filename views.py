@@ -2,6 +2,7 @@ import os
 import re
 import socket
 
+from asyncpg.exceptions import UniqueViolationError
 from sanic.exceptions import abort
 from sanic.log import logger
 from sanic.request import Request
@@ -127,10 +128,10 @@ class UserView(HTTPMethodView):
         else:
             form = UserForm(request)
             if form.validate():
-                user = await form.save()
-                if user:
+                try:
+                    await form.save()
                     return redirect("/")
-                else:
+                except UniqueViolationError:
                     form.name.errors.append("This username already taken!")
 
         return await jinja.render_async(

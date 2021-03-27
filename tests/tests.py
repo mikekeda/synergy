@@ -11,6 +11,10 @@ def test_home_page(setup):
     _, response = app.test_client.get("/?items=10")
     assert response.status == 200
 
+    # default per page is used.
+    _, response = app.test_client.get("/?items=invalid")
+    assert response.status == 200
+
     _, response = app.test_client.get("/?items=20&search=t")
     assert response.status == 200
 
@@ -51,6 +55,12 @@ def test_user_page_post_create(setup):
     _, response = app.test_client.get("/user/2")
     assert response.status == 200
 
+    # Try to create an user with same username.
+    _, response = app.test_client.post(
+        "/user/", data=urlencode(user_data), headers=headers, allow_redirects=False
+    )
+    assert response.status == 200  # form with error
+
     _, response = app.test_client.get("/user/3")
     assert response.status == 404
 
@@ -73,6 +83,12 @@ def test_user_page_post_edit(setup):
     assert response.headers["Location"] == "/"
     assert response.headers["Content-Type"] == "text/html; charset=utf-8"
 
+    # This user do not exist.
+    _, response = app.test_client.post(
+        "/user/100", data=urlencode(user_data), headers=headers, allow_redirects=False
+    )
+    assert response.status == 404
+
 
 def test_user_page_delete(setup):
     _, response = app.test_client.get("/user/1")
@@ -84,4 +100,8 @@ def test_user_page_delete(setup):
 
     # The user shouldn't exist.
     _, response = app.test_client.get("/user/1")
+    assert response.status == 404
+
+    # Try to delete deleted user.
+    _, response = app.test_client.delete("/user/1")
     assert response.status == 404

@@ -4,6 +4,7 @@ import socket
 
 from sanic.exceptions import abort
 from sanic.log import logger
+from sanic.request import Request
 from sanic.response import json, redirect
 from sanic.views import HTTPMethodView
 
@@ -13,20 +14,22 @@ from forms import UserForm, UserEditForm
 from models import db, Course, User, UserCourse
 
 
+def get_arg(request: Request, arg: str, _type: type, default):
+    """ Get request argument. """
+    try:
+        return _type(request.args.get(arg, default))
+    except ValueError:
+        pass
+
+    return default
+
+
 @app.route("/")
-async def users_page(request):
+async def users_page(request: Request):
     """ Users list. """
     # Get current page, convert to int to prevent SQL injection.
-    try:
-        page = int(request.args.get("page", default_page))
-    except ValueError:
-        page = default_page
-
-    # Get amount of items for page, convert to int to prevent SQL injection.
-    try:
-        items_per_page = int(request.args.get("items", default_items_per_page))
-    except ValueError:
-        items_per_page = default_items_per_page
+    page = get_arg(request, "page", int, default_page)
+    items_per_page = get_arg(request, "items", int, default_items_per_page)
 
     # Get search string.
     search = request.args.get("search", "")
@@ -34,10 +37,9 @@ async def users_page(request):
     # remove any other charset to prevent SQL injection
     search = re.sub("[^a-zA-Z]+", "", search)
 
+    query = User.query
     if search:
-        query = User.query.where(User.name.contains(search))
-    else:
-        query = User.query
+        query = query.where(User.name.contains(search))
 
     users = (
         await query.limit(items_per_page).offset((page - 1) * items_per_page).gino.all()
@@ -57,13 +59,10 @@ async def users_page(request):
 
 
 @app.route("/courses")
-async def courses_page(request):
+async def courses_page(request: Request):
     """ Courses list. """
     # Get current page.
-    try:
-        page = int(request.args.get("page", default_page))
-    except ValueError:
-        page = default_page
+    page = get_arg(request, "page", int, default_page)
 
     courses = (
         await Course.query.limit(default_items_per_page)
@@ -80,7 +79,7 @@ async def courses_page(request):
 
 
 @app.route("/about")
-async def about_page(request):
+async def about_page(request: Request):
     """ About page. """
     return await jinja.render_async("about.html", request)
 
@@ -88,7 +87,7 @@ async def about_page(request):
 class UserView(HTTPMethodView):
 
     # noinspection PyMethodMayBeStatic
-    async def get(self, request, uid: int = None):
+    async def get(self, request: Request, uid: int = None):
         """ User edit/create form. """
         if uid:
             user = await User.query.where(User.id == uid).gino.first()
@@ -111,14 +110,13 @@ class UserView(HTTPMethodView):
         )
 
     # noinspection PyMethodMayBeStatic
-    async def post(self, request, uid: int = None):
+    async def post(self, request: Request, uid: int = None):
         """ Submit for User edit/create form. """
         # TODO: Impalement ajax form submit
-        courses = await Course.query.gino.all()
-        form = UserEditForm(request, courses=courses) if uid else UserForm(request)
-
-        if form.validate():
-            if uid:
+        if uid:
+            courses = await Course.query.gino.all()
+            form = UserEditForm(request, courses=courses)
+            if form.validate():
                 user = await User.query.where(User.id == uid).gino.first()
                 if not user:
                     abort(404)
@@ -126,7 +124,9 @@ class UserView(HTTPMethodView):
                 await form.save(obj=user)
 
                 return redirect("/")
-            else:
+        else:
+            form = UserForm(request)
+            if form.validate():
                 user = await form.save()
                 if user:
                     return redirect("/")
@@ -141,10 +141,10 @@ class UserView(HTTPMethodView):
     async def delete(self, _, uid: int):
         """ User deletion. """
         status, _ = await User.delete.where(User.id == uid).gino.status()
-        if status != "DELETE 0":
-            return json({"message": "User was deleted"})
-        else:
+        if status == "DELETE 0":
             abort(404)
+
+        return json({"message": "User was deleted"})
 
 
 app.add_route(UserView.as_view(), "/user/")

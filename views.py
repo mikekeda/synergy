@@ -2,17 +2,18 @@ import os
 import re
 import socket
 
-from asyncpg.exceptions import UniqueViolationError
 from sanic.exceptions import abort
 from sanic.log import logger
 from sanic.request import Request
 from sanic.response import json, redirect
 from sanic.views import HTTPMethodView
+from sqlalchemy import delete, func, select
+from sqlalchemy.exc import IntegrityError
 
 from settings import default_page, default_items_per_page
 from app import app, jinja
 from forms import UserForm, UserEditForm
-from models import db, Course, User, UserCourse
+from models import Course, User, UserCourse
 
 
 def get_arg(request: Request, arg: str, _type: type, default):
@@ -38,15 +39,17 @@ async def users_page(request: Request):
     # remove any other charset to prevent SQL injection
     search = re.sub("[^a-zA-Z]+", "", search)
 
-    query = User.query
+    query = select(User)
     if search:
         query = query.where(User.name.contains(search))
 
-    users = (
-        await query.limit(items_per_page).offset((page - 1) * items_per_page).gino.all()
+    users = await request.ctx.conn.execute(
+        query.limit(items_per_page).offset((page - 1) * items_per_page)
     )
 
-    pages = ((await db.func.count(User.id).gino.scalar()) - 1) // items_per_page + 1
+    pages = (
+        (await request.ctx.conn.execute(func.count(User.id))).scalar() - 1
+    ) // items_per_page + 1
 
     return await jinja.render_async(
         "users.html",
@@ -65,13 +68,13 @@ async def courses_page(request: Request):
     # Get current page.
     page = get_arg(request, "page", int, default_page)
 
-    courses = (
-        await Course.query.limit(default_items_per_page)
+    courses = await request.ctx.conn.execute(
+        select(Course)
+        .limit(default_items_per_page)
         .offset((page - 1) * default_items_per_page)
-        .gino.all()
     )
     pages = (
-        (await db.func.count(Course.id).gino.scalar()) - 1
+        (await request.ctx.conn.execute(func.count(Course.id))).scalar() - 1
     ) // default_items_per_page + 1
 
     return await jinja.render_async(
@@ -91,14 +94,18 @@ class UserView(HTTPMethodView):
     async def get(self, request: Request, uid: int = None):
         """ User edit/create form. """
         if uid:
-            user = await User.query.where(User.id == uid).gino.first()
+            user = (
+                await request.ctx.conn.execute(select(User).where(User.id == uid))
+            ).fetchone()
             if not user:
                 abort(404)
 
-            courses = await Course.query.gino.all()
-            user_courses = await UserCourse.query.where(
-                UserCourse.user_id == uid
-            ).gino.all()
+            courses = (await request.ctx.conn.execute(select(Course))).fetchall()
+            user_courses = (
+                await request.ctx.conn.execute(
+                    select(UserCourse).where(UserCourse.user_id == uid)
+                )
+            ).fetchall()
 
             form = UserEditForm(
                 request, obj=user, courses=courses, user_courses=user_courses
@@ -115,34 +122,37 @@ class UserView(HTTPMethodView):
         """ Submit for User edit/create form. """
         # TODO: Impalement ajax form submit
         if uid:
-            courses = await Course.query.gino.all()
+            courses = (await request.ctx.conn.execute(select(Course))).fetchall()
             form = UserEditForm(request, courses=courses)
             if form.validate():
-                user = await User.query.where(User.id == uid).gino.first()
+                user = (
+                    await request.ctx.conn.execute(select(User).where(User.id == uid))
+                ).fetchone()
                 if not user:
                     abort(404)
 
-                await form.save(obj=user)
+                await form.save(user=user, conn=request.ctx.conn)
 
                 return redirect("/")
         else:
             form = UserForm(request)
             if form.validate():
                 try:
-                    await form.save()
+                    await form.save(conn=request.ctx.conn)
+
                     return redirect("/")
-                except UniqueViolationError:
+                except IntegrityError:
                     form.name.errors.append("This username already taken!")
 
         return await jinja.render_async(
-            "user-form.html", request, form=form, new=uid == ""
+            "user-form.html", request, form=form, new=not uid
         )
 
     # noinspection PyMethodMayBeStatic
-    async def delete(self, _, uid: int):
+    async def delete(self, request, uid: int):
         """ User deletion. """
-        status, _ = await User.delete.where(User.id == uid).gino.status()
-        if status == "DELETE 0":
+        result = await request.ctx.conn.execute(delete(User).where(User.id == uid))
+        if result.rowcount == 0:
             abort(404)
 
         return json({"message": "User was deleted"})

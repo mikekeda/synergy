@@ -4,8 +4,14 @@ from tests.conftest import app
 
 
 # Tests.
-def test_home_page(setup):
+def test_home_page(db_setup):
     _, response = app.test_client.get("/")
+    assert response.status == 200
+
+    _, response = app.test_client.get("/?items=1")
+    assert response.status == 200
+
+    _, response = app.test_client.get("/?items=1&page=2")
     assert response.status == 200
 
     _, response = app.test_client.get("/?items=10")
@@ -19,22 +25,22 @@ def test_home_page(setup):
     assert response.status == 200
 
 
-def test_courses_page(setup):
+def test_courses_page(db_setup):
     _, response = app.test_client.get("/courses")
     assert response.status == 200
 
 
-def test_about_page(setup):
+def test_about_page(db_setup):
     _, response = app.test_client.get("/about")
     assert response.status == 200
 
 
-def test_user_page_get(setup):
+def test_user_page_get(db_setup):
     _, response = app.test_client.get("/user/")
     assert response.status == 200
 
 
-def test_user_page_post_create(setup):
+def test_user_page_post_create(db_setup):
     user_data = {
         "name": "testname",
         "email": "test_email1@test.com",
@@ -52,7 +58,7 @@ def test_user_page_post_create(setup):
     assert response.headers["Location"] == "/"
     assert response.headers["Content-Type"] == "text/html; charset=utf-8"
 
-    _, response = app.test_client.get("/user/2")
+    _, response = app.test_client.get("/user/3")
     assert response.status == 200
 
     # Try to create an user with same username.
@@ -61,11 +67,11 @@ def test_user_page_post_create(setup):
     )
     assert response.status == 200  # form with error
 
-    _, response = app.test_client.get("/user/3")
+    _, response = app.test_client.get("/user/4")
     assert response.status == 404
 
 
-def test_user_page_post_edit(setup):
+def test_user_page_post_edit(db_setup):
     user_data = {
         "name": "testname",
         "email": "test_email_21@test.com",
@@ -90,7 +96,7 @@ def test_user_page_post_edit(setup):
     assert response.status == 404
 
 
-def test_user_page_delete(setup):
+def test_user_page_delete(db_setup):
     _, response = app.test_client.get("/user/1")
     assert response.status == 200
 

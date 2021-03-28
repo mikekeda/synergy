@@ -1,4 +1,5 @@
 from sanic_wtf import SanicForm
+from sqlalchemy import delete, insert, update
 from wtforms import StringField, SelectField, SelectMultipleField
 from wtforms.fields.html5 import EmailField, TelField
 from wtforms.validators import Optional, DataRequired, Email, Regexp
@@ -45,16 +46,15 @@ class UserForm(SanicForm):
     )
     status = SelectField("Status", choices=[(s.name, s.value) for s in Status])
 
-    async def save(self, *args, **kwargs):
-        user = await User.create(
-            **{
+    async def save(self, conn, user=None) -> None:
+        await conn.execute(
+            insert(User),
+            {
                 key: getattr(self, key).data
                 for key in self._fields
                 if hasattr(User, key)
-            }
+            },
         )
-
-        return user
 
 
 class UserEditForm(UserForm):
@@ -82,18 +82,30 @@ class UserEditForm(UserForm):
                 for user_course in user_courses:
                     self.courses.data.append(str(user_course.course_id))
 
-    async def save(self, *args, **kwargs):
+    async def save(self, conn, user=None) -> None:
         """ Form save. """
-        user = kwargs.get("obj")
-        if user:
-            await user.update(
-                **{
+        if not user:
+            return
+
+        await conn.execute(
+            update(User)
+            .where(User.id == user.id)
+            .values(
+                {
                     key: getattr(self, key).data
                     for key in self._fields
                     if getattr(user, key, None)
                 }
-            ).apply()
+            )
+        )
 
-            await UserCourse.delete.where(UserCourse.user_id == user.id).gino.status()
-            for course_id in self.courses.data:
-                await UserCourse.create(user_id=user.id, course_id=int(course_id))
+        await conn.execute(delete(UserCourse).where(UserCourse.user_id == user.id))
+        if self.courses.data:
+            await conn.execute(
+                insert(UserCourse).values(
+                    [
+                        {"user_id": user.id, "course_id": int(course_id)}
+                        for course_id in self.courses.data
+                    ]
+                )
+            )

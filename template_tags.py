@@ -1,9 +1,11 @@
 from urllib.parse import urlencode
 
+from sanic.request import Request
 
-def update_param(request, param, value=None):
+
+def update_param(request: Request, param: str, value: str = None) -> str:
     path = request.path
-    params = request.raw_args
+    params = dict(request.query_args)
     if value:
         params[param] = value
     else:

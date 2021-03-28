@@ -42,10 +42,12 @@ SANIC_CONFIG = {
     "DEBUG": bool(get_env_var("DEBUG", "True")),
     "SOCKET_FILE": get_env_var("SOCKET_FILE", "/temp/synergy.sock"),
     "SECRET_KEY": get_env_var("SECRET_KEY", "test secret"),
-    "DB_USE_CONNECTION_FOR_REQUEST": False,
-    "DB_USER": get_env_var("DB_USER", "user_admin"),
-    "DB_PASSWORD": get_env_var("DB_PASSWORD", "user_admin_pasS64!"),
-    "DB_HOST": get_env_var("DB_HOST", "127.0.0.1"),
-    "DB_DATABASE": get_env_var("DB_NAME", "users"),
+    "DB_URL": (
+        "postgresql+asyncpg://"
+        f"{get_env_var('DB_USER', 'user_admin')}"
+        f":{get_env_var('DB_PASSWORD', 'user_admin_pasS64!')}"
+        f"@{get_env_var('DB_HOST', '127.0.0.1')}"
+        f"/{get_env_var('DB_NAME', 'users')}"
+    ),
     "redis": "redis://127.0.0.1/7",
 }

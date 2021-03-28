@@ -1,41 +1,44 @@
-from enum import Enum
+import enum
 
-from app import db
+from sqlalchemy import Column, Integer, Enum, ForeignKey, String
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
 
 
-class Status(Enum):
+class Status(enum.Enum):
     inactive = "Inactive"
     active = "Active"
 
 
-class User(db.Model):
+class User(Base):
     """ User model. """
 
     __tablename__ = "user"
 
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String, nullable=False, unique=True)
-    email = db.Column(db.String, nullable=False, index=True)
-    phone = db.Column(db.String(13))
-    mobile = db.Column(db.String(13))
-    status = db.Column(db.Enum(Status), nullable=False, default=Status.inactive)
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False, unique=True)
+    email = Column(String, nullable=False, index=True)
+    phone = Column(String(13))
+    mobile = Column(String(13))
+    status = Column(Enum(Status), nullable=False, default=Status.inactive)
 
 
-class Course(db.Model):
+class Course(Base):
     """ Course model. """
 
     __tablename__ = "course"
 
-    id = db.Column(db.Integer(), primary_key=True)
-    code = db.Column(db.String(8), unique=True)
-    name = db.Column(db.String, index=True)
+    id = Column(Integer, primary_key=True)
+    code = Column(String(8), unique=True)
+    name = Column(String, index=True)
 
 
-class UserCourse(db.Model):
+class UserCourse(Base):
     """ User/Course relation model. """
 
     __tablename__ = "usercourse"
 
-    id = db.Column(db.Integer(), primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"))
-    course_id = db.Column(db.Integer, db.ForeignKey("course.id", ondelete="CASCADE"))
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("user.id", ondelete="CASCADE"))
+    course_id = Column(Integer, ForeignKey("course.id", ondelete="CASCADE"))

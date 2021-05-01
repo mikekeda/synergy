@@ -16,7 +16,7 @@ app.config["WTF_CSRF_ENABLED"] = False
 
 @pytest.fixture
 async def db_setup():
-    """ Create test databases and tables before tests run and drop them after. """
+    """Create test databases and tables before tests run and drop them after."""
 
     engine = create_async_engine(SANIC_CONFIG["DB_URL"])
 

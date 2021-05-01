@@ -8,7 +8,7 @@ from models import User, UserCourse, Status
 
 
 class UserForm(SanicForm):
-    """ User create form. """
+    """User create form."""
 
     name = StringField(
         "Name",
@@ -58,7 +58,7 @@ class UserForm(SanicForm):
 
 
 class UserEditForm(UserForm):
-    """ User edit form. """
+    """User edit form."""
 
     courses = SelectMultipleField("Courses")
 
@@ -83,7 +83,7 @@ class UserEditForm(UserForm):
                     self.courses.data.append(str(user_course.course_id))
 
     async def save(self, conn, user=None) -> None:
-        """ Form save. """
+        """Form save."""
         if not user:
             return
 

@@ -28,7 +28,7 @@ session = Session()
 
 @app.listener("before_server_start")
 async def before_server_start(_app, loop):
-    """ Initialize database connection and Redis cache. """
+    """Initialize database connection and Redis cache."""
     _app.ctx.engine = create_async_engine(SANIC_CONFIG["DB_URL"])
 
     caches.set_config(redis_cache_config)
@@ -46,7 +46,7 @@ async def before_server_start(_app, loop):
 
 @app.listener("after_server_stop")
 async def after_server_stop(_app, __):
-    """ Close all db connection on server stop. """
+    """Close all db connection on server stop."""
     _app.redis.close()
     await _app.redis.wait_closed()
 

@@ -17,7 +17,7 @@ from models import Course, User, UserCourse
 
 
 def get_arg(request: Request, arg: str, _type: type, default):
-    """ Get request argument. """
+    """Get request argument."""
     try:
         return _type(request.args.get(arg, default))
     except ValueError:
@@ -28,7 +28,7 @@ def get_arg(request: Request, arg: str, _type: type, default):
 
 @app.route("/")
 async def users_page(request: Request):
-    """ Users list. """
+    """Users list."""
     # Get current page, convert to int to prevent SQL injection.
     page = get_arg(request, "page", int, default_page)
     items_per_page = get_arg(request, "items", int, default_items_per_page)
@@ -64,7 +64,7 @@ async def users_page(request: Request):
 
 @app.route("/courses")
 async def courses_page(request: Request):
-    """ Courses list. """
+    """Courses list."""
     # Get current page.
     page = get_arg(request, "page", int, default_page)
 
@@ -84,7 +84,7 @@ async def courses_page(request: Request):
 
 @app.route("/about")
 async def about_page(request: Request):
-    """ About page. """
+    """About page."""
     return await jinja.render_async("about.html", request)
 
 
@@ -92,7 +92,7 @@ class UserView(HTTPMethodView):
 
     # noinspection PyMethodMayBeStatic
     async def get(self, request: Request, uid: int = None):
-        """ User edit/create form. """
+        """User edit/create form."""
         if uid:
             user = (
                 await request.ctx.conn.execute(select(User).where(User.id == uid))
@@ -119,7 +119,7 @@ class UserView(HTTPMethodView):
 
     # noinspection PyMethodMayBeStatic
     async def post(self, request: Request, uid: int = None):
-        """ Submit for User edit/create form. """
+        """Submit for User edit/create form."""
         # TODO: Impalement ajax form submit
         if uid:
             courses = (await request.ctx.conn.execute(select(Course))).fetchall()
@@ -150,7 +150,7 @@ class UserView(HTTPMethodView):
 
     # noinspection PyMethodMayBeStatic
     async def delete(self, request, uid: int):
-        """ User deletion. """
+        """User deletion."""
         result = await request.ctx.conn.execute(delete(User).where(User.id == uid))
         if result.rowcount == 0:
             abort(404)

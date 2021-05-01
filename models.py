@@ -12,7 +12,7 @@ class Status(enum.Enum):
 
 
 class User(Base):
-    """ User model. """
+    """User model."""
 
     __tablename__ = "user"
 
@@ -25,7 +25,7 @@ class User(Base):
 
 
 class Course(Base):
-    """ Course model. """
+    """Course model."""
 
     __tablename__ = "course"
 
@@ -35,7 +35,7 @@ class Course(Base):
 
 
 class UserCourse(Base):
-    """ User/Course relation model. """
+    """User/Course relation model."""
 
     __tablename__ = "usercourse"
 

@@ -1,5 +1,3 @@
-from collections import namedtuple
-
 from aiocache import caches
 import aioredis
 from sanic import Sanic
@@ -17,11 +15,8 @@ app = Sanic(__name__)
 app.config.update(SANIC_CONFIG)
 app.static("/static", "./static")
 
-# Set jinja_env and session_interface to None to avoid code style warning.
-app.jinja_env = namedtuple("JinjaEnv", ["globals"])({})
-
 jinja = SanicJinja2(app, autoescape=True, enable_async=True)
-app.jinja_env.globals.update(update_param=update_param)
+jinja.env.globals["update_param"] = update_param
 
 session = Session()
 

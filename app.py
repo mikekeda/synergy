@@ -27,12 +27,12 @@ async def before_server_start(_app, loop):
     _app.ctx.engine = create_async_engine(SANIC_CONFIG["DB_URL"])
 
     caches.set_config(redis_cache_config)
-    _app.redis = await aioredis.create_redis_pool(_app.config["redis"])
+    _app.ctx.redis = await aioredis.create_redis_pool(_app.config["redis"])
     # init extensions fabrics
     session.init_app(
         _app,
         interface=AIORedisSessionInterface(
-            _app.redis,
+            _app.ctx.redis,
             samesite="Strict",
             cookie_name="session" if _app.config["DEBUG"] else "__Host-session",
         ),
@@ -42,8 +42,8 @@ async def before_server_start(_app, loop):
 @app.listener("after_server_stop")
 async def after_server_stop(_app, __):
     """Close all db connection on server stop."""
-    _app.redis.close()
-    await _app.redis.wait_closed()
+    _app.ctx.redis.close()
+    await _app.ctx.redis.wait_closed()
 
 
 @app.middleware("request")

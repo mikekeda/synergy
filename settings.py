@@ -1,5 +1,6 @@
 import os
 import requests
+import urllib.parse
 
 SITE_ENV_PREFIX = "SYNERGY"
 
@@ -45,7 +46,7 @@ SANIC_CONFIG = {
     "DB_URL": (
         "postgresql+asyncpg://"
         f"{get_env_var('DB_USER', 'user_admin')}"
-        f":{get_env_var('DB_PASSWORD', 'user_admin_pasS64!')}"
+        f":{urllib.parse.quote_plus(get_env_var('DB_PASSWORD', 'user_admin_pasS64!'))}"
         f"@{get_env_var('DB_HOST', '127.0.0.1')}"
         f"/{get_env_var('DB_NAME', 'users')}"
     ),

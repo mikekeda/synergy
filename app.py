@@ -22,12 +22,12 @@ session = Session()
 
 
 @app.listener("before_server_start")
-async def before_server_start(_app, loop):
+async def before_server_start(_app, _):
     """Initialize database connection and Redis cache."""
     _app.ctx.engine = create_async_engine(SANIC_CONFIG["DB_URL"])
 
     caches.set_config(redis_cache_config)
-    _app.ctx.redis = await aioredis.create_redis_pool(_app.config["redis"])
+    _app.ctx.redis = await aioredis.Redis.from_url(_app.config["redis"])
     # init extensions fabrics
     session.init_app(
         _app,
@@ -43,7 +43,6 @@ async def before_server_start(_app, loop):
 async def after_server_stop(_app, __):
     """Close all db connection on server stop."""
     _app.ctx.redis.close()
-    await _app.ctx.redis.wait_closed()
 
 
 @app.middleware("request")

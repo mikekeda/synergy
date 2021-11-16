@@ -1,7 +1,7 @@
 from sanic_wtf import SanicForm
 from sqlalchemy import delete, insert, update
 from wtforms import StringField, SelectField, SelectMultipleField
-from wtforms.fields.html5 import EmailField, TelField
+from wtforms import EmailField, TelField
 from wtforms.validators import Optional, DataRequired, Email, Regexp
 
 from models import User, UserCourse, Status

@@ -2,7 +2,7 @@ import os
 import re
 import socket
 
-from sanic.exceptions import abort
+from sanic.exceptions import SanicException
 from sanic.log import logger
 from sanic.request import Request
 from sanic.response import json, redirect
@@ -98,7 +98,7 @@ class UserView(HTTPMethodView):
                 await request.ctx.conn.execute(select(User).where(User.id == uid))
             ).fetchone()
             if not user:
-                abort(404)
+                raise SanicException(status_code=404)
 
             courses = (await request.ctx.conn.execute(select(Course))).fetchall()
             user_courses = (
@@ -129,7 +129,7 @@ class UserView(HTTPMethodView):
                     await request.ctx.conn.execute(select(User).where(User.id == uid))
                 ).fetchone()
                 if not user:
-                    abort(404)
+                    raise SanicException(status_code=404)
 
                 await form.save(user=user, conn=request.ctx.conn)
 
@@ -153,7 +153,7 @@ class UserView(HTTPMethodView):
         """User deletion."""
         result = await request.ctx.conn.execute(delete(User).where(User.id == uid))
         if result.rowcount == 0:
-            abort(404)
+            raise SanicException(status_code=404)
 
         return json({"message": "User was deleted"})
 

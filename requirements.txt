@@ -8,5 +8,5 @@ sanic-jinja2==2021.12.25
 sanic-session==0.8.0
 Sanic-WTF==0.6.0
 sqlalchemy==1.4.29
-requests==2.27.0
+requests==2.27.1
 WTForms==3.0.1

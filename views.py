@@ -89,7 +89,6 @@ async def about_page(request: Request):
 
 
 class UserView(HTTPMethodView):
-
     # noinspection PyMethodMayBeStatic
     async def get(self, request: Request, uid: int = None):
         """User edit/create form."""

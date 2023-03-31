@@ -157,8 +157,8 @@ class UserView(HTTPMethodView):
         return json({"message": "User was deleted"})
 
 
-app.add_route(UserView.as_view(), "/user/")
-app.add_route(UserView.as_view(), "/user/<uid:int>")
+app.add_route(UserView.as_view(), "/user/", name="user-view")
+app.add_route(UserView.as_view(), "/user/<uid:int>", name="user-view-by-id")
 
 
 if __name__ == "__main__":

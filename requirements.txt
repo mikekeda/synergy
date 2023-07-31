@@ -3,10 +3,10 @@ aioredis==2.0.1
 asyncpg==0.28.0
 email_validator==2.0.0.post2
 msgpack==1.0.5
-sanic==23.3.0
+sanic==23.6.0
 sanic-jinja2==2022.11.11
 sanic-session==0.8.0
 Sanic-WTF==0.6.0
-sqlalchemy==2.0.18
+sqlalchemy==2.0.19
 requests==2.31.0
 WTForms==3.0.1

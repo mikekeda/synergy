@@ -9,4 +9,4 @@ sanic-session==0.8.0
 Sanic-WTF==0.7.0
 sqlalchemy==2.0.25
 requests==2.31.0
-WTForms==3.1.1
+WTForms==3.1.2

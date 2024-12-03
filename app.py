@@ -1,5 +1,5 @@
 from aiocache import caches
-import aioredis
+from redis import asyncio as aioredis
 from sanic import Sanic
 from sanic.log import logger
 from sanic.request import Request

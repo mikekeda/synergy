@@ -6,6 +6,7 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 from sanic_jinja2 import SanicJinja2
 from sanic_session import Session
+from sanic_session.base import BaseSessionInterface
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from template_tags import update_param

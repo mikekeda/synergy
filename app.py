@@ -21,6 +21,7 @@ jinja.env.globals["update_param"] = update_param
 
 session = Session()
 
+
 class RedisSessionInterface(BaseSessionInterface):
     def __init__(
         self,

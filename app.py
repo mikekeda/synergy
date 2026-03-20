@@ -60,6 +60,27 @@ class RedisSessionInterface(BaseSessionInterface):
     async def _set_value(self, key, data):
         await self.redis.setex(key, self.expiry, data)
 
+    def _delete_cookie(self, request, response):
+        """Override: Sanic CookieJar does not support item assignment."""
+        response.cookies.delete_cookie(self.cookie_name)
+
+    def _set_cookie_props(self, request, response):
+        """Override: Sanic CookieJar does not support item assignment."""
+        req = request.ctx.__dict__
+        cookie = response.add_cookie(
+            self.cookie_name,
+            req[self.session_name].sid,
+            httponly=self.httponly,
+            secure=self.secure,
+        )
+        if not self.sessioncookie:
+            cookie.expires = self._calculate_expires(self.expiry)
+            cookie.max_age = self.expiry
+        if self.domain:
+            cookie.domain = self.domain
+        if self.samesite is not None:
+            cookie.samesite = self.samesite
+
 
 @app.listener("before_server_start")
 async def before_server_start(_app, _):
@@ -74,6 +95,7 @@ async def before_server_start(_app, _):
         interface=RedisSessionInterface(
             _app.ctx.redis,
             samesite="Strict",
+            secure=not _app.config["DEBUG"],
             cookie_name="session" if _app.config["DEBUG"] else "__Host-session",
         ),
     )

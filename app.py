@@ -77,6 +77,7 @@ async def before_server_start(_app, _):
             cookie_name="session" if _app.config["DEBUG"] else "__Host-session",
         ),
     )
+    _app.finalize_middleware()
 
 
 @app.listener("after_server_stop")

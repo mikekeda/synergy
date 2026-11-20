@@ -25,27 +25,15 @@ async def db_setup():
         await conn.run_sync(Base.metadata.create_all)
 
         # Add test users.
-        await conn.execute(
-            insert(User).values({"name": "test_user_1", "email": "test1@test.com"})
-        )
-        await conn.execute(
-            insert(User).values({"name": "test_user_2", "email": "test2@test.com"})
-        )
+        await conn.execute(insert(User).values({"name": "test_user_1", "email": "test1@test.com"}))
+        await conn.execute(insert(User).values({"name": "test_user_2", "email": "test2@test.com"}))
 
         # Add test courses.
-        await conn.execute(
-            insert(Course).values({"code": "P012345", "name": "Python-Base"})
-        )
-        await conn.execute(
-            insert(Course).values({"code": "P234567", "name": "Python-Database"})
-        )
+        await conn.execute(insert(Course).values({"code": "P012345", "name": "Python-Base"}))
+        await conn.execute(insert(Course).values({"code": "P234567", "name": "Python-Database"}))
         await conn.execute(insert(Course).values({"code": "H345678", "name": "HTML"}))
-        await conn.execute(
-            insert(Course).values({"code": "J456789", "name": "Java-Base"})
-        )
-        await conn.execute(
-            insert(Course).values({"code": "JS543210", "name": "JavaScript-Base"})
-        )
+        await conn.execute(insert(Course).values({"code": "J456789", "name": "Java-Base"}))
+        await conn.execute(insert(Course).values({"code": "JS543210", "name": "JavaScript-Base"}))
 
         await conn.commit()
 

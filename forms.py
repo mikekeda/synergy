@@ -49,11 +49,7 @@ class UserForm(SanicForm):
     async def save(self, conn, user=None) -> None:
         await conn.execute(
             insert(User),
-            {
-                key: getattr(self, key).data
-                for key in self._fields
-                if hasattr(User, key)
-            },
+            {key: getattr(self, key).data for key in self._fields if hasattr(User, key)},
         )
 
 
@@ -71,9 +67,7 @@ class UserEditForm(UserForm):
         if kwargs.get("courses"):
             # List of courses.
             self.courses.choices = [("", "-- select courses --")]
-            self.courses.choices.extend(
-                [(str(course.id), course.name) for course in kwargs["courses"]]
-            )
+            self.courses.choices.extend([(str(course.id), course.name) for course in kwargs["courses"]])
 
             # User's courses.
             user_courses = kwargs.get("user_courses")
@@ -90,22 +84,13 @@ class UserEditForm(UserForm):
         await conn.execute(
             update(User)
             .where(User.id == user.id)
-            .values(
-                {
-                    key: getattr(self, key).data
-                    for key in self._fields
-                    if getattr(user, key, None)
-                }
-            )
+            .values({key: getattr(self, key).data for key in self._fields if getattr(user, key, None)})
         )
 
         await conn.execute(delete(UserCourse).where(UserCourse.user_id == user.id))
         if self.courses.data:
             await conn.execute(
                 insert(UserCourse).values(
-                    [
-                        {"user_id": user.id, "course_id": int(course_id)}
-                        for course_id in self.courses.data
-                    ]
+                    [{"user_id": user.id, "course_id": int(course_id)} for course_id in self.courses.data]
                 )
             )

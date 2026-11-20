@@ -43,13 +43,9 @@ async def users_page(request: Request):
     if search:
         query = query.where(User.name.contains(search))
 
-    users = await request.ctx.conn.execute(
-        query.limit(items_per_page).offset((page - 1) * items_per_page)
-    )
+    users = await request.ctx.conn.execute(query.limit(items_per_page).offset((page - 1) * items_per_page))
 
-    pages = (
-        (await request.ctx.conn.execute(func.count(User.id))).scalar() - 1
-    ) // items_per_page + 1
+    pages = ((await request.ctx.conn.execute(func.count(User.id))).scalar() - 1) // items_per_page + 1
 
     return await jinja.render_async(
         "users.html",
@@ -69,17 +65,11 @@ async def courses_page(request: Request):
     page = get_arg(request, "page", int, default_page)
 
     courses = await request.ctx.conn.execute(
-        select(Course)
-        .limit(default_items_per_page)
-        .offset((page - 1) * default_items_per_page)
+        select(Course).limit(default_items_per_page).offset((page - 1) * default_items_per_page)
     )
-    pages = (
-        (await request.ctx.conn.execute(func.count(Course.id))).scalar() - 1
-    ) // default_items_per_page + 1
+    pages = ((await request.ctx.conn.execute(func.count(Course.id))).scalar() - 1) // default_items_per_page + 1
 
-    return await jinja.render_async(
-        "courses.html", request, courses=courses, pages=pages, current_page=page
-    )
+    return await jinja.render_async("courses.html", request, courses=courses, pages=pages, current_page=page)
 
 
 @app.route("/about")
@@ -93,28 +83,20 @@ class UserView(HTTPMethodView):
     async def get(self, request: Request, uid: int = None):
         """User edit/create form."""
         if uid:
-            user = (
-                await request.ctx.conn.execute(select(User).where(User.id == uid))
-            ).fetchone()
+            user = (await request.ctx.conn.execute(select(User).where(User.id == uid))).fetchone()
             if not user:
                 raise SanicException(status_code=404)
 
             courses = (await request.ctx.conn.execute(select(Course))).fetchall()
             user_courses = (
-                await request.ctx.conn.execute(
-                    select(UserCourse).where(UserCourse.user_id == uid)
-                )
+                await request.ctx.conn.execute(select(UserCourse).where(UserCourse.user_id == uid))
             ).fetchall()
 
-            form = UserEditForm(
-                request, obj=user, courses=courses, user_courses=user_courses
-            )
+            form = UserEditForm(request, obj=user, courses=courses, user_courses=user_courses)
         else:
             form = UserForm(request)
 
-        return await jinja.render_async(
-            "user-form.html", request, form=form, new=not uid
-        )
+        return await jinja.render_async("user-form.html", request, form=form, new=not uid)
 
     # noinspection PyMethodMayBeStatic
     async def post(self, request: Request, uid: int = None):
@@ -124,9 +106,7 @@ class UserView(HTTPMethodView):
             courses = (await request.ctx.conn.execute(select(Course))).fetchall()
             form = UserEditForm(request, courses=courses)
             if form.validate():
-                user = (
-                    await request.ctx.conn.execute(select(User).where(User.id == uid))
-                ).fetchone()
+                user = (await request.ctx.conn.execute(select(User).where(User.id == uid))).fetchone()
                 if not user:
                     raise SanicException(status_code=404)
 
@@ -143,9 +123,7 @@ class UserView(HTTPMethodView):
                 except IntegrityError:
                     form.name.errors.append("This username already taken!")
 
-        return await jinja.render_async(
-            "user-form.html", request, form=form, new=not uid
-        )
+        return await jinja.render_async("user-form.html", request, form=form, new=not uid)
 
     # noinspection PyMethodMayBeStatic
     async def delete(self, request, uid: int):

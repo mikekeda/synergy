@@ -120,9 +120,7 @@ async def on_response(request: Request, _):
 
 
 @app.exception(Exception)
-async def exception_handler(
-    request: Request, exception: Exception, **__
-) -> HTTPResponse:
+async def exception_handler(request: Request, exception: Exception, **__) -> HTTPResponse:
     """Exception handler returns error in json format."""
     status_code = getattr(exception, "status_code", 500)
 

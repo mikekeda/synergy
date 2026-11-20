@@ -49,9 +49,7 @@ def test_user_page_post_create(db_setup):
         "status": "active",
     }
     headers = {"content-type": "application/x-www-form-urlencoded"}
-    _, response = app.test_client.post(
-        "/user/", data=urlencode(user_data), headers=headers, allow_redirects=False
-    )
+    _, response = app.test_client.post("/user/", data=urlencode(user_data), headers=headers, allow_redirects=False)
 
     # Check redirect.
     assert response.status == 302
@@ -62,9 +60,7 @@ def test_user_page_post_create(db_setup):
     assert response.status == 200
 
     # Try to create an user with same username.
-    _, response = app.test_client.post(
-        "/user/", data=urlencode(user_data), headers=headers, allow_redirects=False
-    )
+    _, response = app.test_client.post("/user/", data=urlencode(user_data), headers=headers, allow_redirects=False)
     assert response.status == 200  # form with error
 
     _, response = app.test_client.get("/user/4")
@@ -80,9 +76,7 @@ def test_user_page_post_edit(db_setup):
         "status": "inactive",
     }
     headers = {"content-type": "application/x-www-form-urlencoded"}
-    _, response = app.test_client.post(
-        "/user/1", data=urlencode(user_data), headers=headers, allow_redirects=False
-    )
+    _, response = app.test_client.post("/user/1", data=urlencode(user_data), headers=headers, allow_redirects=False)
 
     # Check redirect.
     assert response.status == 302
@@ -90,9 +84,7 @@ def test_user_page_post_edit(db_setup):
     assert response.headers["Content-Type"] == "text/html; charset=utf-8"
 
     # This user do not exist.
-    _, response = app.test_client.post(
-        "/user/100", data=urlencode(user_data), headers=headers, allow_redirects=False
-    )
+    _, response = app.test_client.post("/user/100", data=urlencode(user_data), headers=headers, allow_redirects=False)
     assert response.status == 404
 
 
